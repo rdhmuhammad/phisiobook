@@ -59,10 +59,11 @@ func Default() *Api {
 	})
 
 	var routers = []Router{
+		controller.NewAuthController(dboConn, dbCache, minioConn),
 		controller.NewHealthController(dbCache, dboConn, minioConn),
 		controller.NewHomepageController(dbCache, dboConn, minioConn),
 	}
-	
+
 	return &Api{
 		server:  server,
 		routers: routers,

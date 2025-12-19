@@ -1,6 +1,17 @@
 package constant
 
 const (
+
+	// Role constant for database value
+
+	RoleIsAdmin   = "SUPERADMIN"
+	RoleIsUser    = "ADMIN"
+	RolesIsMobile = "USER"
+
+	// Role constant for controller context
+	ContextDashboard = "DASHBOARD"
+	ContextMobile    = "MOBILE"
+
 	ContextApp = "APP"
 	ContextWeb = "WEB"
 

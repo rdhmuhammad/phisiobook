@@ -1,0 +1,278 @@
+{
+	"info": {
+		"_postman_id": "phisiobook-api-collection",
+		"name": "Phisiobook API",
+		"description": "Complete API collection for Phisiobook backend",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8999/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"fullName\": \"John Doe\",\n    \"email\": \"john.doe@example.com\",\n    \"password\": \"SecurePassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth-user/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth-user",
+								"register"
+							]
+						},
+						"description": "Register a new user account"
+					},
+					"response": []
+				},
+				{
+					"name": "Login (User)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"john.doe@example.com\",\n    \"password\": \"SecurePassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth-user/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth-user",
+								"login"
+							]
+						},
+						"description": "Login for mobile/web users"
+					},
+					"response": []
+				},
+				{
+					"name": "Login (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"AdminPassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth-user/login/admin",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth-user",
+								"login",
+								"admin"
+							]
+						},
+						"description": "Login for admin/dashboard users"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout (User)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"description": "JWT Token from login"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth-user/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth-user",
+								"logout"
+							]
+						},
+						"description": "Logout for mobile/web users (requires authentication)"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"description": "JWT Token from login"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth-user/logout/admin",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth-user",
+								"logout",
+								"admin"
+							]
+						},
+						"description": "Logout for admin/dashboard users (requires authentication)"
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Account",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"john.doe@example.com\",\n    \"otp\": 123456\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth-user/verify-acc",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth-user",
+								"verify-acc"
+							]
+						},
+						"description": "Verify user account with OTP"
+					},
+					"response": []
+				},
+				{
+					"name": "Resend OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"john.doe@example.com\",\n    \"name\": \"John Doe\",\n    \"content\": \"Your OTP verification code\",\n    \"subject\": \"Verify Your Account\",\n    \"userId\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth-user/resend-otp",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth-user",
+								"resend-otp"
+							]
+						},
+						"description": "Resend OTP verification code"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication and user management endpoints"
+		},
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"health",
+								"status"
+							]
+						},
+						"description": "Check system health status (Database, Redis, MinIO)"
+					},
+					"response": []
+				}
+			],
+			"description": "System health check endpoints"
+		},
+		{
+			"name": "Homepage",
+			"item": [
+				{
+					"name": "Get Summary Home",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/homepage/summary",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"homepage",
+								"summary"
+							]
+						},
+						"description": "Get homepage summary statistics (terapis count, kota count, rating)"
+					},
+					"response": []
+				}
+			],
+			"description": "Homepage related endpoints"
+		}
+	]
+}
