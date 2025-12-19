@@ -1,11 +1,11 @@
 package api
 
 import (
+	"base-be-golang/internal/adapter/controller"
 	"base-be-golang/pkg/cache"
 	"base-be-golang/pkg/db"
 	"base-be-golang/pkg/middleware"
 	"base-be-golang/pkg/miniostorage"
-	"context"
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
@@ -44,24 +44,25 @@ func Default() *Api {
 	// Add custom Sentry middleware for request enrichment
 	server.Use(middleware.SentryMiddleware())
 
-	_, err = db.Default()
+	dboConn, err := db.Default()
 	if err != nil {
 		panic(fmt.Sprintf("panic at db connection: %s", err.Error()))
 	}
 
-	_ = cache.Default()
+	dbCache := cache.Default()
 
-	_ = miniostorage.NewConnection(miniostorage.Conn{
+	minioConn := miniostorage.NewConnection(miniostorage.Conn{
 		Endpoint:  os.Getenv("MINIO_ENDPOINT"),
 		Bucket:    os.Getenv("MINIO_BUCKET"),
 		AccessKey: os.Getenv("MINIO_ACCESS_KEY"),
 		SecretKey: os.Getenv("MINIO_SECRET_KEY"),
 	})
 
-	var routers = []Router{}
-
-	middleware.CaptureErrorUsecase(context.Background(), fmt.Errorf("Start application"))
-
+	var routers = []Router{
+		controller.NewHealthController(dbCache, dboConn, minioConn),
+		controller.NewHomepageController(dbCache, dboConn, minioConn),
+	}
+	
 	return &Api{
 		server:  server,
 		routers: routers,

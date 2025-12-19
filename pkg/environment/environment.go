@@ -14,6 +14,11 @@ func NewEnvironment() ENV {
 
 type ENV struct{}
 
+func (e ENV) GetFloat(key string, defaultValue float64) float64 {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (e ENV) GetBranchID() uint {
 	return e.GetUint("BRANCH_ID", 1)
 }

@@ -60,3 +60,15 @@ func (st StorageMinio) StoreFile(ctx context.Context, fileName string, file io.R
 func (st StorageMinio) DeleteFile(ctx context.Context, fileName string) error {
 	return st.client.RemoveObject(ctx, st.bucket, fileName, minio.RemoveObjectOptions{})
 }
+
+func (st StorageMinio) HealthCheck(ctx context.Context) error {
+	// Check if bucket exists
+	exists, err := st.client.BucketExists(ctx, st.bucket)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("bucket %s does not exist", st.bucket)
+	}
+	return nil
+}
