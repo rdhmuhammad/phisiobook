@@ -1,52 +1,64 @@
 package chat_io
 
+import "log"
+
 type Room struct {
 	broadcast chan Transporter
 
 	id string
 
-	actors map[string]*Actor
+	actors *MutexActor
 
 	register chan *Actor
 
 	unregister chan *Actor
 
-	closeRun chan bool
-
 	hub *Hub
 }
 
-func NewRoom(actor *Actor) *Room {
-	actors := make(map[string]*Actor)
-	actors[actor.id] = actor
+func NewRoom(roomId string, actor *Actor, hub *Hub) (*Room, error) {
+	mutexActor := &MutexActor{actors: make(map[string]*Actor)}
+	if err := mutexActor.AddOnce(actor); err != nil {
+		return nil, err
+	}
 	return &Room{
+		id:         roomId,
 		broadcast:  make(chan Transporter),
-		actors:     actors,
+		actors:     mutexActor,
+		hub:        hub,
 		register:   make(chan *Actor),
 		unregister: make(chan *Actor),
-	}
+	}, nil
 }
 
 func (r *Room) run() {
 	for {
 		select {
 		case actor := <-r.register:
-			r.actors[actor.id] = actor
+			if err := r.actors.AddOnce(actor); err != nil {
+				log.Printf("error adding actor: %v", err)
+			}
 		case actor := <-r.unregister:
-			delete(r.actors, actor.id)
-			close(actor.send)
-			if len(r.actors) == 0 {
-				r.hub.close <- r
+			r.actors.DeleteOnce(actor)
+			if r.actors.Size() == 0 {
+				log.Println("begin closing room")
+				select {
+				case r.hub.close <- r:
+					return
+				}
 			}
 		case msg := <-r.broadcast:
-			actor := r.actors[msg.toId]
+			actor, ok := r.actors.Get(msg.FromID)
+			log.Println(actor, msg, ok)
+			if !ok {
+				continue
+			}
 			select {
 			case actor.send <- msg:
-			case <-r.closeRun:
-				return
+				continue
 			default:
-				close(actor.send)
-				delete(r.actors, msg.toId)
+				log.Printf("actor %s leaving \n", actor.id)
+				r.actors.DeleteOnce(actor)
 			}
 		}
 	}

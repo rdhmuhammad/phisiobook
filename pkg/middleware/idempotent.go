@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"base-be-golang/internal/dto"
 	"base-be-golang/pkg/cache"
+	"base-be-golang/pkg/dto"
 	"bytes"
 	"context"
 	"encoding/json"

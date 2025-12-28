@@ -2,10 +2,8 @@ package api
 
 import (
 	"base-be-golang/internal/adapter/controller"
-	"base-be-golang/pkg/cache"
-	"base-be-golang/pkg/db"
+	"base-be-golang/pkg/chat_io"
 	"base-be-golang/pkg/middleware"
-	"base-be-golang/pkg/miniostorage"
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
@@ -43,25 +41,27 @@ func Default() *Api {
 
 	// Add custom Sentry middleware for request enrichment
 	server.Use(middleware.SentryMiddleware())
+	
+	//dboConn, err := db.Default()
+	//if err != nil {
+	//	panic(fmt.Sprintf("panic at db connection: %s", err.Error()))
+	//}
+	//
+	//dbCache := cache.Default()
+	//
+	//minioConn := miniostorage.NewConnection(miniostorage.Conn{
+	//	Endpoint:  os.Getenv("MINIO_ENDPOINT"),
+	//	Bucket:    os.Getenv("MINIO_BUCKET"),
+	//	AccessKey: os.Getenv("MINIO_ACCESS_KEY"),
+	//	SecretKey: os.Getenv("MINIO_SECRET_KEY"),
+	//})
 
-	dboConn, err := db.Default()
-	if err != nil {
-		panic(fmt.Sprintf("panic at db connection: %s", err.Error()))
-	}
-
-	dbCache := cache.Default()
-
-	minioConn := miniostorage.NewConnection(miniostorage.Conn{
-		Endpoint:  os.Getenv("MINIO_ENDPOINT"),
-		Bucket:    os.Getenv("MINIO_BUCKET"),
-		AccessKey: os.Getenv("MINIO_ACCESS_KEY"),
-		SecretKey: os.Getenv("MINIO_SECRET_KEY"),
-	})
-
+	chatHub := chat_io.NewHub()
 	var routers = []Router{
-		controller.NewAuthController(dboConn, dbCache, minioConn),
-		controller.NewHealthController(dbCache, dboConn, minioConn),
-		controller.NewHomepageController(dbCache, dboConn, minioConn),
+		controller.NewChatController(chatHub),
+		//controller.NewAuthController(dboConn, dbCache, minioConn),
+		//controller.NewHealthController(dbCache, dboConn, minioConn),
+		//controller.NewHomepageController(dbCache, dboConn, minioConn),
 	}
 
 	return &Api{

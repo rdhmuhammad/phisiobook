@@ -1,6 +1,7 @@
 package localerror
 
 import (
+	"base-be-golang/internal/constant"
 	"errors"
 	"gorm.io/gorm"
 )

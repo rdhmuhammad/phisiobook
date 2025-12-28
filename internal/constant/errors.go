@@ -20,5 +20,6 @@ var (
 	VerifyOtpExpired      = "VerifyOtpExpired"
 	UserAlreadyVerified   = "UserAlreadyVerified"
 
+	InternalError  = "InternalError"
 	ErrQueryPeriod = fmt.Errorf("hanya diperbolehkan memilih salah satu filter")
 )

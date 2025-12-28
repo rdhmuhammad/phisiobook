@@ -26,25 +26,21 @@ var (
 	space   = []byte{' '}
 )
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
-
 type Actor struct {
 	id   string
 	send chan Transporter
 
-	hub *Room
+	room *Room
 
 	conn *websocket.Conn
 }
 
 // read from inbound mesage then send to designate actor
 func (c *Actor) read() {
+	log.Printf("start reader of %s", c.id)
 	defer func() {
 		log.Println("close reader")
-		c.hub.unregister <- c
+		c.room.unregister <- c
 		c.conn.Close()
 	}()
 
@@ -59,13 +55,17 @@ func (c *Actor) read() {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
 			}
-			break
+			return
 		}
-		c.hub.broadcast <- message
+		log.Println("message read: ", message)
+		select {
+		case c.room.broadcast <- message:
+		}
 	}
 }
 
 func (c *Actor) write() {
+	log.Printf("start writter of %s", c.id)
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		log.Println("close writer")
@@ -85,14 +85,15 @@ func (c *Actor) write() {
 
 			w, err := c.conn.NextWriter(websocket.TextMessage)
 			if err != nil {
+				log.Println(err)
 				return
 			}
 
 			marshal, err := json.Marshal(message)
 			if err != nil {
+				log.Println(err)
 				return
 			}
-
 			w.Write(marshal)
 
 			//
@@ -107,6 +108,7 @@ func (c *Actor) write() {
 				return
 			}
 		case <-ticker.C:
+			log.Println("ping ticker...")
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return

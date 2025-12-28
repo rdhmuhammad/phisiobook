@@ -3,8 +3,7 @@
 package mapper
 
 import (
-	"base-be-golang/internal/dto"
-	"base-be-golang/internal/localerror"
+	"base-be-golang/pkg/dto"
 	localerror2 "base-be-golang/pkg/localerror"
 	"base-be-golang/pkg/localize"
 	"github.com/gin-gonic/gin"

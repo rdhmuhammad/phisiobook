@@ -1,6 +1,7 @@
 package chat_io
 
 type Transporter struct {
-	toId    string
-	message string
+	FromID  string `json:"from_id"`
+	ToID    string `json:"to_id"`
+	Message string `json:"message"`
 }

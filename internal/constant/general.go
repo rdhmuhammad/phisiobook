@@ -12,8 +12,9 @@ const (
 	ContextDashboard = "DASHBOARD"
 	ContextMobile    = "MOBILE"
 
-	ContextApp = "APP"
-	ContextWeb = "WEB"
+	ContextApp     = "APP"
+	ContextWeb     = "WEB"
+	CtxKeyTimezone = "timezone"
 
 	//	PeriodFormatted type on PaymentRepo.GetReportOmsetByPeriod
 	PeriodTypeMonth = "MONTH"
