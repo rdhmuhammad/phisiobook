@@ -113,7 +113,7 @@ func (ctrl AuthController) Route(router *gin.RouterGroup) {
 
 	userAuth.POST("/logout/admin",
 		ctrl.auth.Validate(),
-		ctrl.auth.Authorize(constant.RolesIsMobile),
+		ctrl.auth.Authorize(constant.RolesIsTerapis),
 		func(c *gin.Context) {
 			ctrl.Logout(c, constant.ContextDashboard)
 		})

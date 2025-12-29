@@ -66,6 +66,17 @@ type Mailing interface {
 }
 
 type Generator interface {
+	GenerateUniqueKeyWithPredicate(
+		secretKey string,
+		uniqueID string,
+		length int,
+		isUnique davinci.UniquePredicate,
+	) (string, error)
+	GenerateUniqueKey(
+		secretKey []byte,
+		uniqueID string,
+		length int,
+	) (string, error)
 	GenerateHash(secretKey []byte, uniqueID string) (string, error)
 	GenerateHashValue(session string, id string, i int) (string, error)
 	DecryptMessage(key []byte, data string) (string, error)

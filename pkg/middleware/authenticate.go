@@ -136,7 +136,7 @@ func (receiver Auth) Authorize(roles ...string) gin.HandlerFunc {
 }
 
 func (receiver Auth) setUserActivity(authData UserData) {
-	if authData.RoleName == constant.RolesIsMobile {
+	if authData.RoleName == constant.RolesIsTerapis {
 		user, err := receiver.userRepo.FindOneByExpression(
 			context.Background(),
 			[]clause.Expression{db.Equal(authData.UserId, "auth_code")},

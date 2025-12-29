@@ -5,7 +5,10 @@
       "Bash(grep:*)",
       "Bash(go build:*)",
       "Bash(go list:*)",
-      "Bash(gofmt:*)"
+      "Bash(gofmt:*)",
+      "Bash(findstr:*)",
+      "Bash(python -m json.tool:*)",
+      "Bash(node -e:*)"
     ]
   }
 }

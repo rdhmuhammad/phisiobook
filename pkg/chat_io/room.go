@@ -48,9 +48,10 @@ func (r *Room) run() {
 				}
 			}
 		case msg := <-r.broadcast:
-			actor, ok := r.actors.Get(msg.FromID)
+			actor, ok := r.actors.Get(msg.ToID)
 			log.Println(actor, msg, ok)
 			if !ok {
+				actor.caching(msg)
 				continue
 			}
 			select {

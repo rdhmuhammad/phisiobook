@@ -54,7 +54,8 @@ func (dc Engine) VerifyReferenceNumber(
 	referenceNumber string,
 ) bool {
 	// Generate the hash value using the secret key and transaction identifier
-	hash, err := dc.GenerateUniqueKey(secretKey, uniqueID)
+	// Using length based on reference number length for verification
+	hash, err := dc.GenerateUniqueKey(secretKey, uniqueID, len(referenceNumber))
 	if err != nil {
 		return false
 	}
@@ -88,11 +89,60 @@ func (dc Engine) GenerateCodeTRX() string {
 	return fmt.Sprintf("%s%s-%X", prefix, randomCode, timestamp)
 }
 
+type UniquePredicate func(result string) (bool, error)
+
+func (dc Engine) GenerateUniqueKeyWithPredicate(
+	secretKey string,
+	uniqueID string,
+	length int,
+	isUnique UniquePredicate,
+) (string, error) {
+	key, err := dc.GenerateUniqueKey([]byte(secretKey), uniqueID, length)
+	if err != nil {
+		return "", err
+	}
+	if unique, err := isUnique(key); err != nil {
+		return "", err
+	} else if unique {
+		return key, nil
+	}
+
+	return dc.GenerateUniqueKeyWithPredicate(
+		secretKey, uniqueID, length, isUnique)
+}
+
 func (dc Engine) GenerateUniqueKey(
 	secretKey []byte,
 	uniqueID string,
+	length int,
 ) (string, error) {
-	return strconv.FormatInt(time.Now().UTC().Unix(), 16), nil
+	// Use current timestamp for time-based generation
+	timestamp := time.Now().UnixNano()
+
+	// Combine uniqueID with timestamp for time-based uniqueness
+	data := fmt.Sprintf("%s:%d", uniqueID, timestamp)
+
+	// Generate HMAC using SHA256
+	h := hmac.New(sha256.New, secretKey)
+	_, err := h.Write([]byte(data))
+	if err != nil {
+		return "", err
+	}
+	hash := h.Sum(nil)
+
+	// Charset: alphanumeric lowercase only (a-z, 0-9)
+	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
+	charsetLen := len(charset)
+	result := make([]byte, length)
+
+	// Use hash bytes to select characters from charset
+	for i := 0; i < length; i++ {
+		// Use modulo of hash bytes to get index in charset
+		index := int(hash[i%len(hash)]) % charsetLen
+		result[i] = charset[index]
+	}
+
+	return string(result), nil
 }
 
 func (dc Engine) GenerateHash(secretKey []byte, uniqueID string) (string, error) {

@@ -4,9 +4,9 @@ const (
 
 	// Role constant for database value
 
-	RoleIsAdmin   = "SUPERADMIN"
-	RoleIsUser    = "ADMIN"
-	RolesIsMobile = "USER"
+	RoleIsAdmin    = "SUPERADMIN"
+	RoleIsUser     = "USER"
+	RolesIsTerapis = "TERAPIS"
 
 	// Role constant for controller context
 	ContextDashboard = "DASHBOARD"

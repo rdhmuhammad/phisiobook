@@ -152,7 +152,7 @@ func (u Usecase) Login(ctx context.Context, request LoginRequest) (LoginResponse
 			userMobile.Lang = lang
 		}
 		userDataToken.Lang = lang
-		userDataToken.RoleName = constant.RolesIsMobile
+		userDataToken.RoleName = constant.RolesIsTerapis
 		userMobile.AuthCode = userReference
 		err = u.userRepo.UpdateSelectedCols(ctx, userMobile, "auth_code", "lang")
 		if err != nil {

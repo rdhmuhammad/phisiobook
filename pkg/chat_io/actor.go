@@ -1,6 +1,7 @@
 package chat_io
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
@@ -8,6 +9,7 @@ import (
 )
 
 const (
+	cachingWait = 10 * time.Second
 	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
 
@@ -31,6 +33,8 @@ type Actor struct {
 	send chan Transporter
 
 	room *Room
+
+	hub *Hub
 
 	conn *websocket.Conn
 }
@@ -57,10 +61,19 @@ func (c *Actor) read() {
 			}
 			return
 		}
+
+		c.caching(message)
 		log.Println("message read: ", message)
 		select {
 		case c.room.broadcast <- message:
 		}
+	}
+}
+
+func (c Actor) caching(message Transporter) {
+	if c.hub.caching != nil {
+		newContext, cancle := context.WithDeadline(context.Background(), time.Now().Add(cachingWait))
+		go c.hub.caching.Store(newContext, cancle, message)
 	}
 }
 
@@ -76,35 +89,7 @@ func (c *Actor) write() {
 	for {
 		select {
 		case message, ok := <-c.send:
-			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if !ok {
-				// The hub closed the channel.
-				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
-				return
-			}
-
-			w, err := c.conn.NextWriter(websocket.TextMessage)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-
-			marshal, err := json.Marshal(message)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			w.Write(marshal)
-
-			//
-			//// Add queued chat messages to the current websocket message.
-			//n := len(c.send)
-			//for i := 0; i < n; i++ {
-			//	w.Write(newline)
-			//	w.Write(<-c.send)
-			//}
-
-			if err := w.Close(); err != nil {
+			if c.w(ok, message) {
 				return
 			}
 		case <-ticker.C:
@@ -115,4 +100,39 @@ func (c *Actor) write() {
 			}
 		}
 	}
+}
+
+func (c *Actor) w(ok bool, message Transporter) bool {
+	c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+	if !ok {
+		// The hub closed the channel.
+		c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+		return true
+	}
+
+	w, err := c.conn.NextWriter(websocket.TextMessage)
+	if err != nil {
+		log.Println(err)
+		return true
+	}
+
+	marshal, err := json.Marshal(message)
+	if err != nil {
+		log.Println(err)
+		return true
+	}
+	w.Write(marshal)
+
+	//
+	//// Add queued chat messages to the current websocket message.
+	//n := len(c.send)
+	//for i := 0; i < n; i++ {
+	//	w.Write(newline)
+	//	w.Write(<-c.send)
+	//}
+
+	if err := w.Close(); err != nil {
+		return true
+	}
+	return false
 }

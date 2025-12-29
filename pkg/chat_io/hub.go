@@ -10,6 +10,8 @@ type Hub struct {
 	room *MutexRoom
 
 	close chan *Room
+
+	caching Caching
 }
 
 var upgrader = websocket.Upgrader{
@@ -17,10 +19,11 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-func NewHub() *Hub {
+func NewHub(caching Caching) *Hub {
 	hub := &Hub{
-		room:  &MutexRoom{rooms: make(map[string]*Room)},
-		close: make(chan *Room),
+		room:    &MutexRoom{rooms: make(map[string]*Room)},
+		close:   make(chan *Room),
+		caching: caching,
 	}
 	go hub.run()
 
