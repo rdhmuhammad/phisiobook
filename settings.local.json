@@ -8,7 +8,8 @@
       "Bash(gofmt:*)",
       "Bash(findstr:*)",
       "Bash(python -m json.tool:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(go vet:*)"
     ]
   }
 }
