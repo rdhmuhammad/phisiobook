@@ -2,6 +2,7 @@ package db
 
 import (
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 	"reflect"
 )
 
@@ -55,7 +56,12 @@ type RepoBean struct {
 	Repo BaseRepository
 }
 
-func (main *DBTransaction) GetRepository(repo BaseRepository) BaseRepository {
+func GetRepo[T schema.Tabler](main *DBTransaction, dm T) *GenericRepository[T] {
+	return main.getRepository(&GenericRepository[T]{}).(*GenericRepository[T])
+}
+
+func (main *DBTransaction) getRepository(repo BaseRepository) BaseRepository {
+
 	pTypeRepo := reflect.TypeOf(repo).Elem()
 
 	for _, rp := range main.repos {

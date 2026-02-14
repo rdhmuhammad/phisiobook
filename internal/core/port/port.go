@@ -1,46 +1,56 @@
 package port
 
 import (
+	"base-be-golang/internal/constant"
+	"base-be-golang/internal/core/domain"
 	"base-be-golang/pkg/cache"
 	"base-be-golang/pkg/clock"
 	"base-be-golang/pkg/davinci"
+	"base-be-golang/pkg/db"
 	"base-be-golang/pkg/environment"
+	"base-be-golang/pkg/localerror"
 	"base-be-golang/pkg/mailing"
 	"base-be-golang/pkg/mapper"
 	"base-be-golang/pkg/middleware"
 	"base-be-golang/pkg/miniostorage"
 	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/minio/minio-go/v7"
+	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"html/template"
 	"io"
 	"time"
 )
 
 type Port struct {
-	Davinci Generator
-	Env     Environment
-	Clock   Clock
-	Cache   cache.Cache
-	Mailing Mailing
-	Mapper  mapper.MapperUtility
-	Auth    Auth
-	Storage StorageService
-	DB      *gorm.DB
+	Davinci       Generator
+	Env           Environment
+	Clock         Clock
+	Cache         cache.Cache
+	Mailing       Mailing
+	Mapper        mapper.MapperUtility
+	Auth          Auth
+	Storage       StorageService
+	userRepo      db.GenericRepository[domain.User]
+	userAdminRepo db.GenericRepository[domain.UserAdmin]
 }
 
 func NewPort(dbConn *gorm.DB, cache cache.Cache, minioConn miniostorage.StorageMinio) Port {
 	return Port{
-		Davinci: davinci.DefaultDavinci(),
-		Env:     environment.NewEnvironment(),
-		Clock:   clock.Default(),
-		Cache:   cache,
-		Mailing: mailing.NewConfig(),
-		Mapper:  mapper.NewMapper(),
-		Auth:    middleware.NewAuth(dbConn),
-		Storage: minioConn,
-		DB:      dbConn,
+		Davinci:       davinci.DefaultDavinci(),
+		Env:           environment.NewEnvironment(),
+		Clock:         clock.Default(),
+		userAdminRepo: db.NewGenericeRepo(dbConn, domain.UserAdmin{}),
+		userRepo:      db.NewGenericeRepo(dbConn, domain.User{}),
+		Cache:         cache,
+		Mailing:       mailing.NewConfig(),
+		Mapper:        mapper.NewMapper(),
+		Auth:          middleware.NewAuth(dbConn),
+		Storage:       minioConn,
 	}
 }
 
@@ -124,4 +134,60 @@ func (uc Port) GenerateEmailBodyVerifyOTP(
 	}
 
 	return outWriter.String(), nil
+}
+
+func (uc Port) GetUserLogin(ctx context.Context) (domain.UserEntityInterface, error) {
+	userLogin := uc.Auth.GetUserLogin(ctx)
+
+	userStr, err := uc.Cache.Get(ctx, fmt.Sprintf("%s%s", constant.CacheKeyLogin, userLogin.UserId))
+	if err != nil {
+		middleware.CaptureErrorUsecase(ctx, err)
+	}
+
+	switch {
+	case slices.Contains([]string{constant.RoleIsAdmin, constant.RolesIsTerapis}, userLogin.RoleName):
+		var data domain.UserAdmin
+		err = json.Unmarshal([]byte(userStr), &data)
+		if err == nil {
+			return &data, nil
+		}
+		data, err = uc.userAdminRepo.FindOneByExpression(ctx, []clause.Expression{
+			db.Equal(userLogin.UserId, "auth_code"),
+		})
+		if err != nil {
+			err = localerror.AccessNotAllowedUserNotFound(err)
+			return &domain.UserAdmin{}, err
+		}
+		return &data, nil
+	case userLogin.RoleName == constant.RoleIsUser:
+		var data domain.User
+		err = json.Unmarshal([]byte(userStr), &data)
+		if err == nil {
+			return &data, nil
+		}
+		data, err = uc.userRepo.FindOneByExpression(ctx, []clause.Expression{
+			db.Equal(userLogin.UserId, "auth_code"),
+		})
+		if err != nil {
+			err = localerror.AccessNotAllowedUserNotFound(err)
+			return &domain.User{}, err
+		}
+		return &data, nil
+	}
+
+	return nil, fmt.Errorf("Role is not defined")
+}
+
+func (uc Port) RefreshUserCached(ctx context.Context, user domain.UserEntityInterface, userId string) {
+	userBytes, err := json.Marshal(user)
+	if err != nil {
+		middleware.CaptureErrorUsecase(ctx, err)
+	}
+	err = uc.Cache.Set(ctx,
+		fmt.Sprintf("%s%s", constant.CacheKeyLogin, userId),
+		string(userBytes),
+		time.Hour*time.Duration(uc.Env.GetInt("EXPIRED_TOKEN_JWT", 1)))
+	if err != nil {
+		middleware.CaptureErrorUsecase(ctx, err)
+	}
 }

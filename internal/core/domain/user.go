@@ -7,18 +7,17 @@ import (
 
 type User struct {
 	BaseEntity
-	Code        string       `json:"code"`
-	Profile     string       `json:"profile"`
-	FullName    string       `json:"fullName"`
-	Email       string       `json:"email"`
-	Password    string       `json:"password"`
-	IsVerified  int32        `gorm:"column:is_verified" json:"isVerified"`
-	OTPCode     int32        `gorm:"column:otp_code" json:"otpCode"`
-	AuthCode    string       `json:"authCode"`
-	LangContent string       `json:"langContent"`
-	Lang        string       `json:"lang"`
-	NotifToken  string       `json:"notifToken"`
-	LastActive  sql.NullTime `gorm:"column:last_active" json:"lastActive"`
+	Code       string       `json:"code"`
+	Profile    string       `json:"profile"`
+	FullName   string       `json:"fullName"`
+	Phone      string       `json:"phone"`
+	Email      string       `json:"email"`
+	Password   string       `json:"password"`
+	IsVerified int32        `gorm:"column:is_verified" json:"isVerified"`
+	OTPCode    int32        `gorm:"column:otp_code" json:"otpCode"`
+	AuthCode   string       `json:"authCode"`
+	Lang       string       `json:"lang"`
+	LastActive sql.NullTime `gorm:"column:last_active" json:"lastActive"`
 }
 
 func (receiver *User) GetIsVerified() bool {

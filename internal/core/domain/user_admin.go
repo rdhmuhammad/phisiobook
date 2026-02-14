@@ -9,6 +9,7 @@ type UserAdmin struct {
 	BaseEntity
 	FullName   string       `json:"fullName"`
 	Email      string       `json:"email"`
+	Phone      string       `json:"phone"`
 	Role       MasterRole   `gorm:"foreignKey:RoleID" json:"role"`
 	RoleID     uint         `gorm:"column:role_id" json:"roleID"`
 	Password   string       `json:"password"`
