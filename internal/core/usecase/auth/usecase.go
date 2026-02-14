@@ -18,6 +18,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/gorm/schema"
 	"os"
 	"strconv"
 	"strings"
@@ -25,16 +26,18 @@ import (
 )
 
 type Usecase struct {
-	userRepo      db.GenericRepository[domain.User]
-	userAdminRepo db.GenericRepository[domain.UserAdmin]
+	userRepo       db.GenericRepository[domain.User]
+	userAdminRepo  db.GenericRepository[domain.UserAdmin]
+	masterRoleRepo db.GenericRepository[domain.MasterRole]
 	port.Port
 }
 
 func NewUsecase(dbConn *gorm.DB, cache cache.Cache, conn miniostorage.StorageMinio) Usecase {
 	return Usecase{
-		userAdminRepo: db.NewGenericeRepo[domain.UserAdmin](dbConn, domain.UserAdmin{}),
-		userRepo:      db.NewGenericeRepo[domain.User](dbConn, domain.User{}),
-		Port:          port.NewPort(dbConn, cache, conn),
+		masterRoleRepo: db.NewGenericeRepo[domain.MasterRole](dbConn, domain.MasterRole{}),
+		userAdminRepo:  db.NewGenericeRepo[domain.UserAdmin](dbConn, domain.UserAdmin{}),
+		userRepo:       db.NewGenericeRepo[domain.User](dbConn, domain.User{}),
+		Port:           port.NewPort(dbConn, cache, conn),
 	}
 }
 
@@ -152,7 +155,7 @@ func (u Usecase) Login(ctx context.Context, request LoginRequest) (LoginResponse
 			userMobile.Lang = lang
 		}
 		userDataToken.Lang = lang
-		userDataToken.RoleName = constant.RolesIsTerapis
+		userDataToken.RoleName = constant.RoleIsUser
 		userMobile.AuthCode = userReference
 		err = u.userRepo.UpdateSelectedCols(ctx, userMobile, "auth_code", "lang")
 		if err != nil {
@@ -202,14 +205,41 @@ func (u Usecase) Login(ctx context.Context, request LoginRequest) (LoginResponse
 	}, nil
 }
 
-func (u Usecase) Register(ctx context.Context, request RegisterRequest) (RegisterResponse, error) {
-	exist, err := u.userRepo.IsExistCondition(
+// ====================== Register Helper ==========================
+
+func isDuplicate[T schema.Tabler](
+	ctx context.Context,
+	request RegisterRequest,
+	repo *db.GenericRepository[T],
+) (bool, error) {
+	if exist, err := repo.IsExistCondition(
 		ctx,
 		db.Query(
 			db.Equal(request.Email, "email"),
 			db.Equal(true, "is_verified"),
 		),
+	); err != nil {
+		return false, err
+	} else if exist {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// =================================================================
+
+func (u Usecase) Register(ctx context.Context, request RegisterRequest) (RegisterResponse, error) {
+	var (
+		err   error
+		exist bool
 	)
+	switch request.RoleName {
+	case constant.RoleIsUser:
+		exist, err = isDuplicate(ctx, request, &u.userRepo)
+	case constant.RolesIsTerapis:
+		exist, err = isDuplicate(ctx, request, &u.userAdminRepo)
+	}
 	if err != nil {
 		return RegisterResponse{}, err
 	}
@@ -222,12 +252,34 @@ func (u Usecase) Register(ctx context.Context, request RegisterRequest) (Registe
 		return RegisterResponse{}, err
 	}
 
+	if request.RoleName == constant.RolesIsTerapis {
+		role, err := u.masterRoleRepo.FindOneByExpression(ctx, db.Query(db.Equal(constant.RolesIsTerapis, "name")))
+		if err != nil {
+			return RegisterResponse{}, err
+		}
+
+		user := domain.UserAdmin{
+			Email:    request.Email,
+			Password: encryptMessage,
+			Phone:    request.Phone,
+			FullName: request.FullName,
+			RoleID:   role.ID,
+		}
+		user.SetCreated("system")
+		user, err = u.userAdminRepo.Store(ctx, user)
+		if err != nil {
+			return RegisterResponse{}, err
+		}
+
+		return RegisterResponse{UserID: user.ID}, nil
+	}
+
 	user := domain.User{
-		Email:       request.Email,
-		Password:    encryptMessage,
-		FullName:    request.FullName,
-		LangContent: u.Env.Get("FALLBACK_LANG_CONTENT"),
-		IsVerified:  0,
+		Email:      request.Email,
+		Password:   encryptMessage,
+		Phone:      request.Phone,
+		FullName:   request.FullName,
+		IsVerified: 0,
 	}
 	user.SetCreated("system")
 	user, err = u.userRepo.Store(ctx, user)
@@ -241,6 +293,8 @@ func (u Usecase) Register(ctx context.Context, request RegisterRequest) (Registe
 		if err != nil {
 			return RegisterResponse{}, err
 		}
+
+		return RegisterResponse{UserID: user.ID}, nil
 	} else {
 		otpResult, err := u.GenerateAndSendOTP(
 			ctx,

@@ -10,11 +10,13 @@ import (
 
 type Usecase struct {
 	port.Port
+	dbGorm *gorm.DB
 }
 
 func New(dbConn *gorm.DB, dbCache cache.Cache, minioConn miniostorage.StorageMinio) Usecase {
 	return Usecase{
-		Port: port.NewPort(dbConn, dbCache, minioConn),
+		Port:   port.NewPort(dbConn, dbCache, minioConn),
+		dbGorm: dbConn,
 	}
 }
 
@@ -22,7 +24,7 @@ func (uc Usecase) CheckHealth(ctx context.Context) (map[string]string, error) {
 	status := make(map[string]string)
 
 	// Check Database
-	sqlDB, err := uc.DB.DB()
+	sqlDB, err := uc.dbGorm.DB()
 	if err != nil {
 		status["db"] = "error: " + err.Error()
 	} else {
