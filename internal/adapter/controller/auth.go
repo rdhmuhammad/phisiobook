@@ -49,13 +49,14 @@ func (ctrl AuthController) Login(c *gin.Context, role string) {
 	ctrl.mapper.NewResponse(c, dto.NewSuccessResponse(result, constant.LoginSuccess), err)
 }
 
-func (ctrl AuthController) Register(c *gin.Context) {
+func (ctrl AuthController) Register(c *gin.Context, roleName string) {
 	var request auth.RegisterRequest
 	if errs := ctrl.enigma.BindAndValidate(c, &request); len(errs) > 0 {
 		c.JSON(http.StatusBadRequest, dto.DefaultInvalidInputFormResponse(errs))
 		return
 	}
 
+	request.RoleName = roleName
 	result, err := ctrl.uc.Register(c.Request.Context(), request)
 	ctrl.mapper.NewResponse(c, dto.NewSuccessResponse(result, constant.RegisterSuccess), err)
 }
@@ -82,48 +83,65 @@ func (ctrl AuthController) ResendOTP(c *gin.Context) {
 }
 
 func (ctrl AuthController) Route(router *gin.RouterGroup) {
-	userAuth := router.Group("/auth-user")
+	routeAuth := router.Group("/auth-user")
+
+	// ==================== USER ROUTE ====================
+	userAuth := routeAuth.Group("/user")
 	userAuth.POST("/register",
 		ctrl.idem.Idempotent(
-			"/register",
+			"/register/user",
 			"username",
 			time.Millisecond*2,
 		),
-		ctrl.Register,
+		func(c *gin.Context) {
+			ctrl.Register(c, constant.RoleIsUser)
+		},
 	)
-
+	userAuth.POST("/logout",
+		ctrl.auth.Validate(),
+		ctrl.auth.Authorize(constant.RoleIsUser),
+		func(c *gin.Context) {
+			ctrl.Logout(c, constant.ContextMobile)
+		})
 	userAuth.POST("/login",
 		func(c *gin.Context) {
 			ctrl.Login(c, constant.ContextMobile)
 		},
 	)
+	// =========================================================
 
-	userAuth.POST("/login/admin",
+	// ==================== DASHBOARD ROUTE ====================
+	dashboardAuth := router.Group("/employee")
+	dashboardAuth.POST("/register",
+		ctrl.idem.Idempotent(
+			"/register/terapis",
+			"username",
+			time.Millisecond*2,
+		),
+		func(c *gin.Context) {
+			ctrl.Register(c, constant.RolesIsTerapis)
+		},
+	)
+
+	dashboardAuth.POST("/login",
 		func(c *gin.Context) {
 			ctrl.Login(c, constant.ContextDashboard)
 		},
 	)
-
-	userAuth.POST("/logout",
+	dashboardAuth.POST("/logout",
 		ctrl.auth.Validate(),
-		ctrl.auth.Authorize(constant.RoleIsAdmin, constant.RoleIsUser),
-		func(c *gin.Context) {
-			ctrl.Logout(c, constant.ContextMobile)
-		})
-
-	userAuth.POST("/logout/admin",
-		ctrl.auth.Validate(),
-		ctrl.auth.Authorize(constant.RolesIsTerapis),
+		ctrl.auth.Authorize(constant.RolesIsTerapis, constant.RoleIsAdmin),
 		func(c *gin.Context) {
 			ctrl.Logout(c, constant.ContextDashboard)
 		})
+	// ===========================================================
 
-	userAuth.POST(
+	routeAuth.POST(
 		"/verify-acc",
 		ctrl.VerifyAcc,
 	)
 
-	userAuth.POST(
+	routeAuth.POST(
 		"/resend-otp",
 		ctrl.idem.Idempotent(
 			"/register",

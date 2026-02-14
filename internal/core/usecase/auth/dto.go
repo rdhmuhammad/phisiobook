@@ -3,7 +3,9 @@ package auth
 type RegisterRequest struct {
 	FullName string `json:"fullName" binding:"required"`
 	Email    string `json:"email" binding:"required"`
+	Phone    string `json:"phone" binding:"required"`
 	Password string `json:"password" binding:"required"`
+	RoleName string `json:"-"`
 }
 
 type LoginRequest struct {
