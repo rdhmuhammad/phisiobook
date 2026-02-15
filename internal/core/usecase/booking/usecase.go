@@ -99,8 +99,8 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 	// Calculate amounts
 	subTotal := therapist.Price
 	applicationFee := setting.ApplicationFee
-	taxAmount := (subTotal * setting.TaxPPN) / 100
-	totalAmount := subTotal + applicationFee + taxAmount
+	taxAmount := (float64(subTotal) * setting.TaxPPN) / 100
+	totalAmount := float64(subTotal) + applicationFee + taxAmount
 
 	// Generate reference number
 	referenceNumber := fmt.Sprintf("BK-%d-%d", booking.ID, uc.Clock.NowUnix())
@@ -125,7 +125,7 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 	// Create payment details
 	paymentDetails := []domain.PaymentDetail{
 		{
-			Amount:          subTotal,
+			Amount:          float64(subTotal),
 			ReferenceNumber: referenceNumber,
 			Name:            "sub_total",
 			ParentPaymentID: payment.ID,
