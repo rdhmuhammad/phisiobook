@@ -8,6 +8,7 @@ import (
 	"base-be-golang/pkg/db"
 	"base-be-golang/pkg/dto"
 	"base-be-golang/pkg/localerror"
+	"base-be-golang/pkg/logger"
 	"base-be-golang/pkg/miniostorage"
 	"context"
 	"fmt"
@@ -22,9 +23,9 @@ type Usecase struct {
 	dbTrx         db.DBTransaction
 }
 
-func NewUsecase(gormDb *gorm.DB, cacheClient cache.Cache, minioClient miniostorage.StorageMinio) Usecase {
+func NewUsecase(gormDb *gorm.DB, cacheClient cache.Cache, minioClient miniostorage.StorageMinio, rz *logger.ReZero) Usecase {
 	return Usecase{
-		Port:          port.NewPort(gormDb, cacheClient, minioClient),
+		Port:          port.NewPort(gormDb, cacheClient, minioClient, rz),
 		userAdminRepo: db.NewGenericeRepo(gormDb, domain.UserAdmin{}),
 		userRepo:      db.NewGenericeRepo(gormDb, domain.User{}),
 		dbTrx: db.NewDBTransaction(gormDb,

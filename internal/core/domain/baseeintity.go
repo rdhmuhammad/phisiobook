@@ -1,6 +1,10 @@
 package domain
 
-import "time"
+import (
+	"fmt"
+	"os"
+	"time"
+)
 
 type BaseEntity struct {
 	ID        uint      `gorm:"primaryKey;type:BIGINT UNSIGNED AUTO_INCREMENT" json:"id"`
@@ -36,4 +40,17 @@ func (receiver *BaseEntity) SetUpdated(actor string) {
 
 func (receiver *BaseEntity) SetPrimaryKey(id uint) {
 	receiver.ID = id
+}
+
+// ===================== GET IMAGE ===========================
+
+func (receiver *BaseEntity) downloadFile(value string) string {
+	if value == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("%s/api/v1/download?fileName=%s",
+		os.Getenv("BACKEND_URL"),
+		value,
+	)
 }

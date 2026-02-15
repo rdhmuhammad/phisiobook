@@ -12,6 +12,7 @@ import (
 	localerror2 "base-be-golang/pkg/localerror"
 	"base-be-golang/pkg/localize"
 	"context"
+	"crypto/rand"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -22,6 +23,7 @@ import (
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"math/big"
 	"net/http"
 	"os"
 	"strings"
@@ -299,6 +301,27 @@ func (receiver Auth) GetSessionFromContext(ctx context.Context) SessionDataUser 
 	}
 
 	return data
+}
+
+func (receiver Auth) GenerateCode(prefix string) string {
+	const (
+		charset    = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+		codeLength = 6
+		charsetLen = int64(len(charset))
+	)
+
+	// Generate a random code.
+	randomCode := make([]byte, codeLength)
+	for i := range randomCode {
+		// Generate a random index based on the charset length.
+		index, err := rand.Int(rand.Reader, big.NewInt(charsetLen))
+		if err != nil {
+			panic("Failed to generate random index")
+		}
+		randomCode[i] = charset[index.Int64()]
+	}
+
+	return fmt.Sprintf("%s%s", prefix, randomCode)
 }
 
 func (receiver Auth) SetSessionToContext(c *gin.Context, ctx context.Context) (context.Context, error) {

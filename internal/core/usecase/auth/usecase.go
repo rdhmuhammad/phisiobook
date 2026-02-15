@@ -7,6 +7,7 @@ import (
 	"base-be-golang/pkg/cache"
 	"base-be-golang/pkg/db"
 	"base-be-golang/pkg/localerror"
+	"base-be-golang/pkg/logger"
 	"base-be-golang/pkg/mailing"
 	"base-be-golang/pkg/middleware"
 	"base-be-golang/pkg/miniostorage"
@@ -29,15 +30,21 @@ type Usecase struct {
 	userRepo       db.GenericRepository[domain.User]
 	userAdminRepo  db.GenericRepository[domain.UserAdmin]
 	masterRoleRepo db.GenericRepository[domain.MasterRole]
+	dbTrx          db.DBTransaction
 	port.Port
 }
 
-func NewUsecase(dbConn *gorm.DB, cache cache.Cache, conn miniostorage.StorageMinio) Usecase {
+func NewUsecase(dbConn *gorm.DB, cache cache.Cache, conn miniostorage.StorageMinio, rz *logger.ReZero) Usecase {
 	return Usecase{
 		masterRoleRepo: db.NewGenericeRepo[domain.MasterRole](dbConn, domain.MasterRole{}),
 		userAdminRepo:  db.NewGenericeRepo[domain.UserAdmin](dbConn, domain.UserAdmin{}),
 		userRepo:       db.NewGenericeRepo[domain.User](dbConn, domain.User{}),
-		Port:           port.NewPort(dbConn, cache, conn),
+		Port:           port.NewPort(dbConn, cache, conn, rz),
+		dbTrx: db.NewDBTransaction(dbConn,
+			db.NewGenericeRepoPointr(dbConn, domain.User{}),
+			db.NewGenericeRepoPointr(dbConn, domain.Therapist{}),
+			db.NewGenericeRepoPointr(dbConn, domain.UserAdmin{}),
+		),
 	}
 }
 
@@ -48,13 +55,13 @@ func (u Usecase) Logout(ctx context.Context, role string) error {
 		user, err := u.userAdminRepo.FindOneByExpression(ctx, []clause.Expression{db.Equal(userSession.UserId, "auth_code")})
 		err = localerror.AccessNotAllowedUserNotFound(err)
 		if err != nil {
-			return err
+			return u.Errhandler.ErrorReturn(err)
 		}
 
 		user.AuthCode = "EXPIRED"
 		err = u.userAdminRepo.UpdateSelectedCols(ctx, user, "auth_code")
 		if err != nil {
-			return err
+			return u.Errhandler.ErrorReturn(err)
 		}
 		break
 	case constant.ContextMobile:
@@ -67,7 +74,7 @@ func (u Usecase) Logout(ctx context.Context, role string) error {
 		user.AuthCode = "EXPIRED"
 		err = u.userRepo.UpdateSelectedCols(ctx, user, "auth_code")
 		if err != nil {
-			return err
+			return u.Errhandler.ErrorReturn(err)
 		}
 		break
 	}
@@ -98,7 +105,7 @@ func (u Usecase) Login(ctx context.Context, request LoginRequest) (LoginResponse
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return LoginResponse{}, localerror.InvalidData(constant.LoginPasswordMismatch)
 			}
-			return LoginResponse{}, err
+			return LoginResponse{}, u.Errhandler.ErrorReturn(err)
 		}
 		user = &data
 		userMobile = data
@@ -116,7 +123,7 @@ func (u Usecase) Login(ctx context.Context, request LoginRequest) (LoginResponse
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return LoginResponse{}, localerror.InvalidData(constant.LoginPasswordMismatch)
 			}
-			return LoginResponse{}, err
+			return LoginResponse{}, u.Errhandler.ErrorReturn(err)
 		}
 		user = &data
 		userAdmin = data
@@ -124,7 +131,7 @@ func (u Usecase) Login(ctx context.Context, request LoginRequest) (LoginResponse
 	}
 
 	if rawPas, err := u.Davinci.DecryptMessage([]byte(u.Env.Get("ENCRYPT_MESSAGE_PASSWORD")), user.GetPassword()); err != nil {
-		return LoginResponse{}, err
+		return LoginResponse{}, u.Errhandler.ErrorReturn(err)
 	} else if rawPas != request.Password {
 		return LoginResponse{}, localerror.InvalidData(constant.LoginPasswordMismatch)
 	}
@@ -132,7 +139,7 @@ func (u Usecase) Login(ctx context.Context, request LoginRequest) (LoginResponse
 	issuedAt := jwt.NewNumericDate(u.Clock.Now(ctx))
 	userReference, err := u.Davinci.GenerateHash([]byte(u.Env.Get("SECRET_USER_ID")), strconv.FormatUint(uint64(user.GetID()), 10))
 	if err != nil {
-		return LoginResponse{}, err
+		return LoginResponse{}, u.Errhandler.ErrorReturn(err)
 	}
 	userDataToken := middleware.UserData{
 		UserId: userReference,
@@ -159,7 +166,7 @@ func (u Usecase) Login(ctx context.Context, request LoginRequest) (LoginResponse
 		userMobile.AuthCode = userReference
 		err = u.userRepo.UpdateSelectedCols(ctx, userMobile, "auth_code", "lang")
 		if err != nil {
-			return LoginResponse{}, err
+			return LoginResponse{}, u.Errhandler.ErrorReturn(err)
 		}
 
 		err = u.Cache.Set(ctx, constant.CacheKeyUserCoordinate+userReference, userCoord, time.Duration(0))
@@ -171,7 +178,7 @@ func (u Usecase) Login(ctx context.Context, request LoginRequest) (LoginResponse
 		userDataToken.RoleName = userAdmin.Role.Name
 		err = u.userAdminRepo.UpdateSelectedCols(ctx, userAdmin, "auth_code")
 		if err != nil {
-			return LoginResponse{}, err
+			return LoginResponse{}, u.Errhandler.ErrorReturn(err)
 		}
 	}
 
@@ -183,7 +190,7 @@ func (u Usecase) Login(ctx context.Context, request LoginRequest) (LoginResponse
 		},
 	})
 	if err != nil {
-		return LoginResponse{}, err
+		return LoginResponse{}, u.Errhandler.ErrorReturn(err)
 	}
 
 	userBytes, err := json.Marshal(user)
@@ -211,12 +218,13 @@ func isDuplicate[T schema.Tabler](
 	ctx context.Context,
 	request RegisterRequest,
 	repo *db.GenericRepository[T],
+	col string,
 ) (bool, error) {
 	if exist, err := repo.IsExistCondition(
 		ctx,
 		db.Query(
 			db.Equal(request.Email, "email"),
-			db.Equal(true, "is_verified"),
+			db.Equal(true, col),
 		),
 	); err != nil {
 		return false, err
@@ -234,14 +242,15 @@ func (u Usecase) Register(ctx context.Context, request RegisterRequest) (Registe
 		err   error
 		exist bool
 	)
+
 	switch request.RoleName {
 	case constant.RoleIsUser:
-		exist, err = isDuplicate(ctx, request, &u.userRepo)
+		exist, err = isDuplicate(ctx, request, &u.userRepo, "is_verified")
 	case constant.RolesIsTerapis:
-		exist, err = isDuplicate(ctx, request, &u.userAdminRepo)
+		exist, err = isDuplicate(ctx, request, &u.userAdminRepo, "is_active")
 	}
 	if err != nil {
-		return RegisterResponse{}, err
+		return RegisterResponse{}, u.Errhandler.ErrorReturn(err)
 	}
 	if exist {
 		return RegisterResponse{}, localerror.InvalidData(constant.RegisterEmailUsed)
@@ -249,13 +258,40 @@ func (u Usecase) Register(ctx context.Context, request RegisterRequest) (Registe
 
 	encryptMessage, err := u.Davinci.EncryptMessage([]byte(u.Env.Get("ENCRYPT_MESSAGE_PASSWORD")), []byte(request.Password))
 	if err != nil {
-		return RegisterResponse{}, err
+		u.Errhandler.ErrorPrint(err)
+		return RegisterResponse{}, localerror.InvalidData(constant.LoginPasswordMismatch)
 	}
+
+	u.dbTrx.Begin()
+	defer func(err error) {
+		if r := recover(); r != nil {
+			err := u.dbTrx.End(fmt.Errorf("recovery"))
+			if err != nil {
+				u.Errhandler.ErrorPrint(err)
+				middleware.CaptureErrorUsecase(ctx, err)
+				return
+			}
+		}
+
+		err = u.dbTrx.End(err)
+		if err != nil {
+			u.Errhandler.ErrorPrint(err)
+			middleware.CaptureErrorUsecase(ctx, err)
+			return
+		}
+	}(err)
 
 	if request.RoleName == constant.RolesIsTerapis {
 		role, err := u.masterRoleRepo.FindOneByExpression(ctx, db.Query(db.Equal(constant.RolesIsTerapis, "name")))
 		if err != nil {
-			return RegisterResponse{}, err
+			return RegisterResponse{}, u.Errhandler.ErrorReturn(err)
+		}
+
+		generatedCode, err := u.GenerateCode(ctx, "USR-", func(ctx context.Context, code string) (bool, error) {
+			return u.userAdminRepo.IsExistCondition(ctx, db.Query(db.Equal(code, "code")))
+		})
+		if err != nil {
+			return RegisterResponse{}, u.Errhandler.ErrorReturn(err)
 		}
 
 		user := domain.UserAdmin{
@@ -264,34 +300,45 @@ func (u Usecase) Register(ctx context.Context, request RegisterRequest) (Registe
 			Phone:    request.Phone,
 			FullName: request.FullName,
 			RoleID:   role.ID,
+			Code:     generatedCode,
 		}
+
+		user.SetIsVerified(true)
 		user.SetCreated("system")
-		user, err = u.userAdminRepo.Store(ctx, user)
+		user, err = db.GetRepo(&u.dbTrx, domain.UserAdmin{}).Store(ctx, user)
 		if err != nil {
-			return RegisterResponse{}, err
+			return RegisterResponse{}, u.Errhandler.ErrorReturn(err)
 		}
 
 		return RegisterResponse{UserID: user.ID}, nil
+	}
+
+	generatedCode, err := u.GenerateCode(ctx, "USR-", func(ctx context.Context, code string) (bool, error) {
+		return u.userRepo.IsExistCondition(ctx, db.Query(db.Equal(code, "code")))
+	})
+	if err != nil {
+		return RegisterResponse{}, u.Errhandler.ErrorReturn(err)
 	}
 
 	user := domain.User{
 		Email:      request.Email,
 		Password:   encryptMessage,
 		Phone:      request.Phone,
+		Code:       generatedCode,
 		FullName:   request.FullName,
 		IsVerified: 0,
 	}
 	user.SetCreated("system")
-	user, err = u.userRepo.Store(ctx, user)
+	user, err = db.GetRepo(&u.dbTrx, domain.User{}).Store(ctx, user)
 	if err != nil {
-		return RegisterResponse{}, err
+		return RegisterResponse{}, u.Errhandler.ErrorReturn(err)
 	}
 
 	if u.Env.CheckFlag("EMAIL_VERIFICATION_OFF") {
 		user.SetIsVerified(true)
-		err = u.userRepo.UpdateSelectedCols(ctx, user, "is_verified")
+		err = db.GetRepo(&u.dbTrx, domain.User{}).UpdateSelectedCols(ctx, user, "is_verified")
 		if err != nil {
-			return RegisterResponse{}, err
+			return RegisterResponse{}, u.Errhandler.ErrorReturn(err)
 		}
 
 		return RegisterResponse{UserID: user.ID}, nil
@@ -306,13 +353,13 @@ func (u Usecase) Register(ctx context.Context, request RegisterRequest) (Registe
 			false,
 		)
 		if err != nil {
-			return RegisterResponse{}, err
+			return RegisterResponse{}, u.Errhandler.ErrorReturn(err)
 		}
 
 		user.OTPCode = otpResult.Otp
-		err = u.userRepo.UpdateSelectedCols(ctx, user, "otp_code")
+		err = db.GetRepo(&u.dbTrx, domain.User{}).UpdateSelectedCols(ctx, user, "otp_code")
 		if err != nil {
-			return RegisterResponse{}, err
+			return RegisterResponse{}, u.Errhandler.ErrorReturn(err)
 		}
 	}
 
@@ -325,7 +372,7 @@ func (u Usecase) VerifyAcc(ctx context.Context, request VerifyAccRequest) (Verif
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return VerifyAccResponse{}, localerror.InvalidData(constant.EmailNotFound)
 		}
-		return VerifyAccResponse{}, err
+		return VerifyAccResponse{}, u.Errhandler.ErrorReturn(err)
 	}
 
 	isExpired, err := u.Cache.Get(ctx, constant.CacheKeyOTP+strconv.FormatInt(int64(request.Otp), 10))
@@ -333,7 +380,7 @@ func (u Usecase) VerifyAcc(ctx context.Context, request VerifyAccRequest) (Verif
 		if errors.Is(redis.Nil, err) {
 			return VerifyAccResponse{}, localerror.InvalidData(constant.VerifyOtpExpired)
 		}
-		return VerifyAccResponse{}, err
+		return VerifyAccResponse{}, u.Errhandler.ErrorReturn(err)
 	}
 
 	if parseBool, err := strconv.ParseBool(isExpired); err != nil {
@@ -348,7 +395,7 @@ func (u Usecase) VerifyAcc(ctx context.Context, request VerifyAccRequest) (Verif
 	user.SetIsVerified(true)
 	err = u.userRepo.UpdateSelectedCols(ctx, user, "is_verified")
 	if err != nil {
-		return VerifyAccResponse{}, err
+		return VerifyAccResponse{}, u.Errhandler.ErrorReturn(err)
 	}
 
 	return VerifyAccResponse{IsVerified: true}, nil
@@ -360,7 +407,7 @@ func (u Usecase) ResendOTP(ctx context.Context, request SendOtpRequest) error {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return localerror.InvalidData(constant.EmailNotFound)
 		}
-		return err
+		return u.Errhandler.ErrorReturn(err)
 	}
 
 	if user.GetIsVerified() {
@@ -376,7 +423,7 @@ func (u Usecase) ResendOTP(ctx context.Context, request SendOtpRequest) error {
 		}, true,
 	)
 	if err != nil {
-		return err
+		return u.Errhandler.ErrorReturn(err)
 	}
 
 	return nil

@@ -6,6 +6,7 @@ import (
 	"base-be-golang/internal/core/port"
 	"base-be-golang/pkg/cache"
 	"base-be-golang/pkg/db"
+	"base-be-golang/pkg/logger"
 	"base-be-golang/pkg/miniostorage"
 	"context"
 	"fmt"
@@ -21,9 +22,9 @@ type Usecase struct {
 	settingRepo   db.GenericRepository[domain.Setting]
 }
 
-func NewUsecase(dbCon *gorm.DB, dbCache cache.Cache, minioConn miniostorage.StorageMinio) Usecase {
+func NewUsecase(dbCon *gorm.DB, dbCache cache.Cache, minioConn miniostorage.StorageMinio, rz *logger.ReZero) Usecase {
 	return Usecase{
-		Port:          port.NewPort(dbCon, dbCache, minioConn),
+		Port:          port.NewPort(dbCon, dbCache, minioConn, rz),
 		therapistRepo: db.NewGenericeRepo(dbCon, domain.Therapist{}),
 		settingRepo:   db.NewGenericeRepo(dbCon, domain.Setting{}),
 		statusRepo:    db.NewGenericeRepo[domain.MasterBookingStatus](dbCon, domain.MasterBookingStatus{}),

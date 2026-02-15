@@ -5,6 +5,7 @@ import (
 	"base-be-golang/internal/core/usecase/auth"
 	"base-be-golang/pkg/cache"
 	"base-be-golang/pkg/dto"
+	"base-be-golang/pkg/logger"
 	"base-be-golang/pkg/miniostorage"
 	"context"
 	"github.com/gin-gonic/gin"
@@ -18,10 +19,10 @@ type AuthController struct {
 	uc AuthUsecaseInterface
 }
 
-func NewAuthController(db *gorm.DB, cacheDb cache.Cache, conn miniostorage.StorageMinio) AuthController {
+func NewAuthController(db *gorm.DB, cacheDb cache.Cache, conn miniostorage.StorageMinio, rz *logger.ReZero) AuthController {
 	return AuthController{
 		BaseController: NewBaseController(cacheDb, db),
-		uc:             auth.NewUsecase(db, cacheDb, conn),
+		uc:             auth.NewUsecase(db, cacheDb, conn, rz),
 	}
 }
 
@@ -86,8 +87,8 @@ func (ctrl AuthController) Route(router *gin.RouterGroup) {
 	routeAuth := router.Group("/auth-user")
 
 	// ==================== USER ROUTE ====================
-	userAuth := routeAuth.Group("/user")
-	userAuth.POST("/register",
+	userRoute := routeAuth.Group("/user")
+	userRoute.POST("/register",
 		ctrl.idem.Idempotent(
 			"/register/user",
 			"username",
@@ -97,18 +98,42 @@ func (ctrl AuthController) Route(router *gin.RouterGroup) {
 			ctrl.Register(c, constant.RoleIsUser)
 		},
 	)
-	userAuth.POST("/logout",
+	userRoute.POST("/logout",
 		ctrl.auth.Validate(),
 		ctrl.auth.Authorize(constant.RoleIsUser),
 		func(c *gin.Context) {
 			ctrl.Logout(c, constant.ContextMobile)
 		})
-	userAuth.POST("/login",
+	userRoute.POST("/login",
 		func(c *gin.Context) {
 			ctrl.Login(c, constant.ContextMobile)
 		},
 	)
 	// =========================================================
+
+	// ==================== THERAPIST ROUTE ====================
+	therapyRoute := router.Group("/therapist")
+	therapyRoute.POST("/register",
+		ctrl.idem.Idempotent(
+			"/register/therapist",
+			"username",
+			time.Millisecond*2,
+		),
+		func(c *gin.Context) {
+			ctrl.Register(c, constant.RolesIsTerapis)
+		},
+	)
+	therapyRoute.POST("/logout",
+		ctrl.auth.Validate(),
+		ctrl.auth.Authorize(constant.RolesIsTerapis),
+		func(c *gin.Context) {
+			ctrl.Logout(c, constant.ContextDashboard)
+		})
+	therapyRoute.POST("/login",
+		func(c *gin.Context) {
+			ctrl.Login(c, constant.ContextDashboard)
+		},
+	)
 
 	// ==================== DASHBOARD ROUTE ====================
 	dashboardAuth := router.Group("/employee")

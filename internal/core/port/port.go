@@ -9,6 +9,7 @@ import (
 	"base-be-golang/pkg/db"
 	"base-be-golang/pkg/environment"
 	"base-be-golang/pkg/localerror"
+	"base-be-golang/pkg/logger"
 	"base-be-golang/pkg/mailing"
 	"base-be-golang/pkg/mapper"
 	"base-be-golang/pkg/middleware"
@@ -23,6 +24,7 @@ import (
 	"gorm.io/gorm/clause"
 	"html/template"
 	"io"
+	"strconv"
 	"time"
 )
 
@@ -32,6 +34,7 @@ type Port struct {
 	Clock         Clock
 	Cache         cache.Cache
 	Mailing       Mailing
+	Errhandler    ErrHandler
 	Mapper        mapper.MapperUtility
 	Auth          Auth
 	Storage       StorageService
@@ -39,8 +42,9 @@ type Port struct {
 	userAdminRepo db.GenericRepository[domain.UserAdmin]
 }
 
-func NewPort(dbConn *gorm.DB, cache cache.Cache, minioConn miniostorage.StorageMinio) Port {
+func NewPort(dbConn *gorm.DB, cache cache.Cache, minioConn miniostorage.StorageMinio, rz *logger.ReZero) Port {
 	return Port{
+		Errhandler:    localerror.NewHandlerError(rz),
 		Davinci:       davinci.DefaultDavinci(),
 		Env:           environment.NewEnvironment(),
 		Clock:         clock.Default(),
@@ -61,6 +65,12 @@ type StorageService interface {
 	HealthCheck(ctx context.Context) error
 }
 
+type ErrHandler interface {
+	ErrorPrint(err error)
+	DebugPrint(err string, v ...interface{})
+	ErrorReturn(err error) localerror.InternalError
+}
+
 type Cache interface {
 	Get(ctx context.Context, key string) (string, error)
 	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error
@@ -69,6 +79,7 @@ type Cache interface {
 type Auth interface {
 	SignClaim(claim middleware.DefaultUserClaim) (string, error)
 	GetUserLogin(ctx context.Context) middleware.UserData
+	GenerateCode(prefix string) string
 }
 
 type Mailing interface {
@@ -190,4 +201,40 @@ func (uc Port) RefreshUserCached(ctx context.Context, user domain.UserEntityInte
 	if err != nil {
 		middleware.CaptureErrorUsecase(ctx, err)
 	}
+}
+
+func (uc Port) GenerateCode(ctx context.Context, prefix string, isExist func(ctx context.Context, code string) (bool, error)) (string, error) {
+	code := uc.Auth.GenerateCode(prefix)
+	if exist, err := isExist(ctx, code); err != nil {
+		return "", err
+	} else if !exist {
+		return code, nil
+	}
+
+	return uc.GenerateCode(ctx, prefix, isExist)
+}
+
+func (uc Port) FormatRupiah(amount int) string {
+	// Convert int to string
+	str := strconv.FormatInt(int64(amount), 10)
+
+	n := len(str)
+	if n <= 3 {
+		return "Rp. " + str + ",00"
+	}
+
+	var result string
+	counter := 0
+
+	// Loop from right to left
+	for i := n - 1; i >= 0; i-- {
+		result = string(str[i]) + result
+		counter++
+
+		if counter%3 == 0 && i != 0 {
+			result = "." + result
+		}
+	}
+
+	return "Rp. " + result + ",00"
 }

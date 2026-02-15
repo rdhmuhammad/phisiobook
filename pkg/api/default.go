@@ -4,6 +4,7 @@ import (
 	"base-be-golang/internal/adapter/controller"
 	"base-be-golang/pkg/cache"
 	"base-be-golang/pkg/db"
+	"base-be-golang/pkg/logger"
 	"base-be-golang/pkg/middleware"
 	"base-be-golang/pkg/miniostorage"
 	"fmt"
@@ -68,12 +69,14 @@ func Default() *Api {
 
 	//chatHub := chat_io.NewHub(caching_chat.NewUsecase(*mongoConn))
 
+	reZero := logger.DefaultLogger()
+
 	var routers = []Router{
-		//controller.NewChatController(chatHub),
-		controller.NewAuthController(dboConn, dbCache, minioConn),
-		controller.NewHealthController(dbCache, dboConn, minioConn),
-		//controller.NewHomepageController(dbCache, dboConn, minioConn),
-		//controller.NewServiceController(dboConn, minioConn, dbCache),
+		//controller.NewChatController(chatHub, &reZero),
+		controller.NewAuthController(dboConn, dbCache, minioConn, &reZero),
+		controller.NewHealthController(dbCache, dboConn, minioConn, &reZero),
+		controller.NewHomepageController(dbCache, dboConn, minioConn, &reZero),
+		//controller.NewServiceController(dboConn, minioConn, dbCache, &reZero),
 	}
 
 	return &Api{

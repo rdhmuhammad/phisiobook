@@ -7,6 +7,7 @@ import (
 
 type UserAdmin struct {
 	BaseEntity
+	Code       string       `json:"code"`
 	FullName   string       `json:"fullName"`
 	Email      string       `json:"email"`
 	Phone      string       `json:"phone"`

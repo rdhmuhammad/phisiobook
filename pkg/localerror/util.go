@@ -2,6 +2,7 @@ package localerror
 
 import (
 	"base-be-golang/internal/constant"
+	"base-be-golang/pkg/logger"
 	"errors"
 	"gorm.io/gorm"
 )
@@ -57,4 +58,35 @@ func InvalidData(msg string) error {
 
 func InvalidDataWithData(msg string, data map[string]string) error {
 	return InvalidDataError{Msg: msg, DataToTemplated: data}
+}
+
+type InternalError struct {
+	Msg string
+}
+
+func (receiver InternalError) Error() string {
+	return receiver.Msg
+}
+
+type HandleError struct {
+	logger *logger.ReZero
+}
+
+func NewHandlerError(lg *logger.ReZero) HandleError {
+	return HandleError{
+		logger: lg,
+	}
+}
+
+func (h HandleError) ErrorPrint(err error) {
+	h.logger.Error(err)
+}
+
+func (h HandleError) DebugPrint(err string, v ...interface{}) {
+	h.logger.Debugf(err, v)
+}
+
+func (h HandleError) ErrorReturn(err error) InternalError {
+	h.logger.Error(err)
+	return InternalError{err.Error()}
 }

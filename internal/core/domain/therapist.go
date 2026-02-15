@@ -2,14 +2,42 @@ package domain
 
 type Therapist struct {
 	BaseEntity
-	CityId         string  `json:"city_id"`
-	Name           string  `json:"name"`
-	ExperienceYear int     `json:"experience_year"`
-	Rating         float64 `json:"rating"`
-	Price          float64 `json:"price"`
-	TherapyType    string  `json:"therapy_type"`
+	Code           string            `json:"code"`
+	Profile        string            `json:"profile"`
+	Name           string            `json:"name"`
+	IsVerified     int32             `json:"is_verified"`
+	CityId         string            `json:"city_id"`
+	ExperienceYear int               `json:"experience_year"`
+	Rating         float64           `json:"rating"`
+	Price          int               `json:"price"`
+	AuthID         uint              `json:"authId"`
+	Auth           UserAdmin         `gorm:"foreignKey:AuthID" json:"auth"`
+	TherapyID      uint              `json:"therapyId"`
+	TherapyType    MasterTherapyType `gorm:"foreignKey:TherapyID" json:"therapyType"`
+}
+
+func (receiver *Therapist) GetIsVerified() bool {
+	return receiver.IsVerified == 1
+}
+
+func (receiver *Therapist) SetIsVerified(status bool) {
+	switch status {
+	case true:
+		receiver.IsVerified = 1
+		break
+	case false:
+		receiver.IsVerified = 0
+		break
+	default:
+		receiver.IsVerified = 0
+		break
+	}
 }
 
 func (t Therapist) TableName() string {
 	return "therapists"
+}
+
+func (t Therapist) GetProfile() string {
+	return t.downloadFile(t.Profile)
 }

@@ -4,6 +4,7 @@ import (
 	"base-be-golang/internal/core/usecase/health"
 	"base-be-golang/pkg/cache"
 	"base-be-golang/pkg/dto"
+	"base-be-golang/pkg/logger"
 	"base-be-golang/pkg/miniostorage"
 	"context"
 	"github.com/gin-gonic/gin"
@@ -19,10 +20,10 @@ type HealthCheckUsecase interface {
 	CheckHealth(ctx context.Context) (map[string]string, error)
 }
 
-func NewHealthController(dbCache cache.Cache, dbConn *gorm.DB, minioConn miniostorage.StorageMinio) HealthCheckController {
+func NewHealthController(dbCache cache.Cache, dbConn *gorm.DB, minioConn miniostorage.StorageMinio, rz *logger.ReZero) HealthCheckController {
 	return HealthCheckController{
 		BaseController: NewBaseController(dbCache, dbConn),
-		uc:             health.New(dbConn, dbCache, minioConn),
+		uc:             health.New(dbConn, dbCache, minioConn, rz),
 	}
 }
 

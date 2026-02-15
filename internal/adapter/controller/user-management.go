@@ -6,6 +6,7 @@ import (
 	"base-be-golang/internal/core/usecase/user_management"
 	"base-be-golang/pkg/cache"
 	"base-be-golang/pkg/dto"
+	"base-be-golang/pkg/logger"
 	"base-be-golang/pkg/miniostorage"
 	"context"
 	"github.com/gin-gonic/gin"
@@ -26,10 +27,10 @@ type UserManagementUsecase interface {
 	GetList(ctx context.Context, query dto.GetListQueryNoPeriod) (dto.PaginationResponse[domain.UserListItem], error)
 }
 
-func NewUserManagementController(dbConn *gorm.DB, minio miniostorage.StorageMinio, dbCache cache.Cache) UserManagementController {
+func NewUserManagementController(dbConn *gorm.DB, minio miniostorage.StorageMinio, dbCache cache.Cache, rz *logger.ReZero) UserManagementController {
 	return UserManagementController{
 		BaseController: NewBaseController(dbCache, dbConn),
-		uc:             user_management.NewUsecase(dbConn, dbCache, minio),
+		uc:             user_management.NewUsecase(dbConn, dbCache, minio, rz),
 	}
 }
 

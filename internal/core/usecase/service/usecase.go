@@ -7,6 +7,7 @@ import (
 	"base-be-golang/pkg/db"
 	"base-be-golang/pkg/dto"
 	"base-be-golang/pkg/localerror"
+	"base-be-golang/pkg/logger"
 	"base-be-golang/pkg/miniostorage"
 	"context"
 	"fmt"
@@ -24,9 +25,9 @@ type Usecase struct {
 	includedItemRepo db.GenericRepository[domain.ServiceIncludedItem]
 }
 
-func NewUsecase(dbConn *gorm.DB, cacheClient cache.Cache, minioClient miniostorage.StorageMinio) Usecase {
+func NewUsecase(dbConn *gorm.DB, cacheClient cache.Cache, minioClient miniostorage.StorageMinio, rz *logger.ReZero) Usecase {
 	return Usecase{
-		Port:             port.NewPort(dbConn, cacheClient, minioClient),
+		Port:             port.NewPort(dbConn, cacheClient, minioClient, rz),
 		dbConn:           dbConn,
 		serviceRepo:      db.NewGenericeRepo(dbConn, domain.Service{}),
 		categoryRepo:     db.NewGenericeRepo(dbConn, domain.MasterServiceCategory{}),

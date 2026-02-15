@@ -5,6 +5,7 @@ import (
 	"base-be-golang/internal/core/usecase/service"
 	"base-be-golang/pkg/cache"
 	"base-be-golang/pkg/dto"
+	"base-be-golang/pkg/logger"
 	"base-be-golang/pkg/miniostorage"
 	"context"
 	"net/http"
@@ -28,10 +29,10 @@ type ServiceUsecase interface {
 	GetCategories(ctx context.Context) ([]service.CategoryItem, error)
 }
 
-func NewServiceController(dbConn *gorm.DB, minio miniostorage.StorageMinio, dbCache cache.Cache) ServiceController {
+func NewServiceController(dbConn *gorm.DB, minio miniostorage.StorageMinio, dbCache cache.Cache, rz *logger.ReZero) ServiceController {
 	return ServiceController{
 		BaseController: NewBaseController(dbCache, dbConn),
-		uc:             service.NewUsecase(dbConn, dbCache, minio),
+		uc:             service.NewUsecase(dbConn, dbCache, minio, rz),
 	}
 }
 
