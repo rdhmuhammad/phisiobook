@@ -17,6 +17,7 @@ type HomepageController struct {
 
 type HomepageUsecase interface {
 	GetSummaryHome(ctx context.Context) (*homepage.SummaryHomeResponse, error)
+	GetCityDropdown(ctx context.Context) ([]homepage.CityDropdownResponse, error)
 }
 
 func NewHomepageController(dbCache cache.Cache, dbConn *gorm.DB, minioConn miniostorage.StorageMinio) HomepageController {
@@ -31,7 +32,13 @@ func (ctrl HomepageController) GetSummaryHome(c *gin.Context) {
 	ctrl.mapper.NewResponse(c, dto.NewSuccessResponse(res, "Success"), err)
 }
 
+func (ctrl HomepageController) GetCityDropdown(c *gin.Context) {
+	res, err := ctrl.uc.GetCityDropdown(c.Request.Context())
+	ctrl.mapper.NewResponse(c, dto.NewSuccessResponse(res, "Success"), err)
+}
+
 func (router HomepageController) Route(routes *gin.RouterGroup) {
 	homepageRoutes := routes.Group("/homepage")
 	homepageRoutes.GET("/summary", router.GetSummaryHome)
+	homepageRoutes.GET("/cities", router.GetCityDropdown)
 }

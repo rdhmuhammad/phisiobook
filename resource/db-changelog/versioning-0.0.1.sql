@@ -111,6 +111,17 @@ VALUES ('Pending', 'pending', NOW(), NOW()),
 UPDATE name=
 VALUES (name);
 
+-- Master Cities Table
+CREATE TABLE IF NOT EXISTS master_cities
+(
+    id         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name       VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    updated_by VARCHAR(100)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Bookings Table
 CREATE TABLE IF NOT EXISTS bookings
 (

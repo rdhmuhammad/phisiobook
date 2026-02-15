@@ -13,13 +13,15 @@ import (
 
 type Usecase struct {
 	port.Port
-	repo db.GenericRepository[domain.SummaryHomepage]
+	repo     db.GenericRepository[domain.SummaryHomepage]
+	cityRepo db.GenericRepository[domain.MasterCity]
 }
 
 func New(dbConn *gorm.DB, dbCache cache.Cache, minioConn miniostorage.StorageMinio) Usecase {
 	return Usecase{
-		Port: port.NewPort(dbConn, dbCache, minioConn),
-		repo: db.NewGenericeRepo(dbConn, domain.SummaryHomepage{}),
+		Port:     port.NewPort(dbConn, dbCache, minioConn),
+		repo:     db.NewGenericeRepo(dbConn, domain.SummaryHomepage{}),
+		cityRepo: db.NewGenericeRepo(dbConn, domain.MasterCity{}),
 	}
 }
 
@@ -51,4 +53,21 @@ func (uc Usecase) GetSummaryHome(ctx context.Context) (*SummaryHomeResponse, err
 
 func convertIntToString(val int) string {
 	return fmt.Sprintf("%d", val)
+}
+
+func (uc Usecase) GetCityDropdown(ctx context.Context) ([]CityDropdownResponse, error) {
+	cities, err := uc.cityRepo.FindAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]CityDropdownResponse, len(cities))
+	for i, city := range cities {
+		result[i] = CityDropdownResponse{
+			ID:   city.ID,
+			Name: city.Name,
+		}
+	}
+
+	return result, nil
 }
