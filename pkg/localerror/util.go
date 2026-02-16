@@ -32,8 +32,16 @@ func AccessNotAllowedUserNotFound(err error) error {
 	return err
 }
 
-func IsNotFound(target error, source error) bool {
-	return errors.Is(source, InvalidDataError{Msg: target.Error()})
+func IsAccessNotAllowedUserNotFound(err error) bool {
+	return err != nil && errors.Is(err, AccessControlError{Msg: constant.SessionExpired})
+}
+
+func IsNotFound(err error) bool {
+	return errors.Is(err, InvalidDataError{Msg: err.Error()})
+}
+
+func IsInvalidData(err error) bool {
+	return err != nil && errors.As(err, &InvalidDataError{})
 }
 
 func NotFound(err error, msg string) error {
@@ -86,7 +94,12 @@ func (h HandleError) DebugPrint(err string, v ...interface{}) {
 	h.logger.Debugf(err, v)
 }
 
-func (h HandleError) ErrorReturn(err error) InternalError {
+func (h HandleError) ErrorReturn(err error) error {
+	if IsAccessNotAllowedUserNotFound(err) ||
+		IsNotFound(err) || IsInvalidData(err) {
+		return err
+	}
+
 	h.logger.Error(err)
 	return InternalError{err.Error()}
 }

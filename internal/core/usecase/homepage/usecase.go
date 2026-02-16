@@ -32,7 +32,7 @@ func (uc Usecase) GetSummaryHome(ctx context.Context) (*SummaryHomeResponse, err
 	// Fetch the summary data from database
 	summaries, err := uc.repo.FindAll(ctx)
 	if err != nil {
-		return nil, err
+		return nil, uc.Errhandler.ErrorReturn(err)
 	}
 
 	// If no data exists, return default response

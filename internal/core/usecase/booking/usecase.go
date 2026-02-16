@@ -7,11 +7,11 @@ import (
 	"base-be-golang/pkg/cache"
 	"base-be-golang/pkg/db"
 	"base-be-golang/pkg/logger"
+	"base-be-golang/pkg/middleware"
 	"base-be-golang/pkg/miniostorage"
 	"context"
 	"fmt"
 	"gorm.io/gorm"
-	"log"
 )
 
 type Usecase struct {
@@ -34,12 +34,12 @@ func NewUsecase(dbCon *gorm.DB, dbCache cache.Cache, minioConn miniostorage.Stor
 func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingRequest) error {
 	userLogin, err := uc.GetUserLogin(ctx)
 	if err != nil {
-		return err
+		return uc.Errhandler.ErrorReturn(err)
 	}
 
 	pendingStatus, err := uc.statusRepo.FindOneByExpression(ctx, db.Query(db.Equal(constant.BookingStatusPending, "name")))
 	if err != nil {
-		return err
+		return uc.Errhandler.ErrorReturn(err)
 	}
 
 	uc.dbTrx.Begin()
@@ -47,14 +47,16 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 		if r := recover(); r != nil {
 			err := uc.dbTrx.End(fmt.Errorf("recovery"))
 			if err != nil {
-				log.Println(err)
+				middleware.CaptureErrorUsecase(ctx, err)
+				uc.Errhandler.ErrorPrint(err)
 				return
 			}
 		}
 
 		err = uc.dbTrx.End(err)
 		if err != nil {
-			log.Println(err)
+			middleware.CaptureErrorUsecase(ctx, err)
+			uc.Errhandler.ErrorPrint(err)
 			return
 		}
 	}(err)
@@ -71,7 +73,7 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 	bookingRepo := db.GetRepo(&uc.dbTrx, domain.Booking{})
 	booking, err = bookingRepo.Store(ctx, booking)
 	if err != nil {
-		return err
+		return uc.Errhandler.ErrorReturn(err)
 	}
 
 	statusHistory := domain.BookingStatusHistory{
@@ -83,17 +85,17 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 	histRepo := db.GetRepo(&uc.dbTrx, domain.BookingStatusHistory{})
 	statusHistory, err = histRepo.Store(ctx, statusHistory)
 	if err != nil {
-		return err
+		return uc.Errhandler.ErrorReturn(err)
 	}
 
 	therapist, err := uc.therapistRepo.FindOneByID(ctx, request.TherapistID)
 	if err != nil {
-		return err
+		return uc.Errhandler.ErrorReturn(err)
 	}
 
 	setting, err := uc.settingRepo.FindOneByExpression(ctx, db.Query(db.Equal(true, "status")))
 	if err != nil {
-		return err
+		return uc.Errhandler.ErrorReturn(err)
 	}
 
 	// Calculate amounts
@@ -119,7 +121,7 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 	paymentRepo := db.GetRepo(&uc.dbTrx, domain.Payment{})
 	payment, err = paymentRepo.Store(ctx, payment)
 	if err != nil {
-		return err
+		return uc.Errhandler.ErrorReturn(err)
 	}
 
 	// Create payment details
@@ -149,7 +151,7 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 		detail.SetCreated(userLogin.GetAuthCode())
 		_, err = paymentDetailRepo.Store(ctx, detail)
 		if err != nil {
-			return err
+			return uc.Errhandler.ErrorReturn(err)
 		}
 	}
 

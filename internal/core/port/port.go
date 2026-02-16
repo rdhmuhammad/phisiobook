@@ -68,7 +68,7 @@ type StorageService interface {
 type ErrHandler interface {
 	ErrorPrint(err error)
 	DebugPrint(err string, v ...interface{})
-	ErrorReturn(err error) localerror.InternalError
+	ErrorReturn(err error) error
 }
 
 type Cache interface {

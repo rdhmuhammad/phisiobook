@@ -3,17 +3,13 @@
 package ucval
 
 type ValidationNode[T any] struct {
-	next *ValidationNode[T]
-	ValidationValidator[T]
+	next     *ValidationNode[T]
+	Validate func(input T) ValidationResult
 }
 
-type ValidationValidator[T any] interface {
-	Validate(input T) ValidationResult
-}
-
-func NewValidationNode[T any](node ValidationValidator[T]) *ValidationNode[T] {
+func NewNode[T any](validate func(input T) ValidationResult) *ValidationNode[T] {
 	return &ValidationNode[T]{
-		ValidationValidator: node,
+		Validate: validate,
 	}
 }
 
@@ -38,7 +34,9 @@ func (th *ValidationNode[T]) GetResult(request T) ValidationResult {
 	return validateResult
 }
 
-func (th *ValidationNode[T]) Add(node *ValidationNode[T]) *ValidationNode[T] {
+func (th *ValidationNode[T]) Add(fn func(input T) ValidationResult) *ValidationNode[T] {
+	node := NewNode[T](fn)
+
 	if th.next == nil {
 		th.next = node
 		return th
