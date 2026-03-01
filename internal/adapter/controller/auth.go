@@ -2,16 +2,15 @@ package controller
 
 import (
 	"base-be-golang/internal/constant"
+	"base-be-golang/internal/core/port"
 	"base-be-golang/internal/core/usecase/auth"
-	"base-be-golang/pkg/cache"
 	"base-be-golang/pkg/dto"
-	"base-be-golang/pkg/logger"
-	"base-be-golang/pkg/miniostorage"
 	"context"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type AuthController struct {
@@ -19,10 +18,10 @@ type AuthController struct {
 	uc AuthUsecaseInterface
 }
 
-func NewAuthController(db *gorm.DB, cacheDb cache.Cache, conn miniostorage.StorageMinio, rz *logger.ReZero) AuthController {
+func NewAuthController(db *gorm.DB, controller BaseController, prt port.Port) AuthController {
 	return AuthController{
-		BaseController: NewBaseController(cacheDb, db),
-		uc:             auth.NewUsecase(db, cacheDb, conn, rz),
+		BaseController: controller,
+		uc:             auth.NewUsecase(db, prt),
 	}
 }
 

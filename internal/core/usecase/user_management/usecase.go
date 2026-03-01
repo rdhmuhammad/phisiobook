@@ -4,14 +4,12 @@ import (
 	"base-be-golang/internal/constant"
 	"base-be-golang/internal/core/domain"
 	"base-be-golang/internal/core/port"
-	"base-be-golang/pkg/cache"
 	"base-be-golang/pkg/db"
 	"base-be-golang/pkg/dto"
 	"base-be-golang/pkg/localerror"
-	"base-be-golang/pkg/logger"
-	"base-be-golang/pkg/miniostorage"
 	"context"
 	"fmt"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -23,9 +21,9 @@ type Usecase struct {
 	dbTrx         db.DBTransaction
 }
 
-func NewUsecase(gormDb *gorm.DB, cacheClient cache.Cache, minioClient miniostorage.StorageMinio, rz *logger.ReZero) Usecase {
+func NewUsecase(gormDb *gorm.DB, prt port.Port) Usecase {
 	return Usecase{
-		Port:          port.NewPort(gormDb, cacheClient, minioClient, rz),
+		Port:          prt,
 		userAdminRepo: db.NewGenericeRepo(gormDb, domain.UserAdmin{}),
 		userRepo:      db.NewGenericeRepo(gormDb, domain.User{}),
 		dbTrx: db.NewDBTransaction(gormDb,
@@ -181,12 +179,9 @@ func (u Usecase) DeleteAccount(ctx context.Context) error {
 	}
 
 	u.dbTrx.Begin()
-	defer func(err *error) {
-		errTrx := u.dbTrx.End(*err)
-		if errTrx != nil {
-			println(errTrx)
-		}
-	}(&err)
+	defer func(err error) {
+		db.TransactionEnd(ctx, &u.dbTrx, err)
+	}(err)
 
 	userMobile := userLogin.(*domain.User)
 	err = u.Cache.Delete(ctx, fmt.Sprintf("%s%s", constant.CacheKeyLogin, userMobile.AuthCode))

@@ -8,6 +8,7 @@ import (
 type User struct {
 	BaseEntity
 	Code       string       `json:"code"`
+	ChatRef    string       `json:"chatRef"`
 	Profile    string       `json:"profile"`
 	FullName   string       `json:"fullName"`
 	Phone      string       `json:"phone"`

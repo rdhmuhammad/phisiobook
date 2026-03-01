@@ -3,21 +3,25 @@ package controller
 import (
 	"base-be-golang/internal/constant"
 	"base-be-golang/internal/core/domain"
+	"base-be-golang/internal/core/port"
 	"base-be-golang/internal/core/usecase/user_management"
-	"base-be-golang/pkg/cache"
 	"base-be-golang/pkg/dto"
-	"base-be-golang/pkg/logger"
-	"base-be-golang/pkg/miniostorage"
 	"context"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type UserManagementController struct {
 	BaseController
 	uc UserManagementUsecase
+}
+
+func (ctrl UserManagementController) Route(handler *gin.RouterGroup) {
+	//TODO implement me
+	panic("implement me")
 }
 
 type UserManagementUsecase interface {
@@ -27,10 +31,10 @@ type UserManagementUsecase interface {
 	GetList(ctx context.Context, query dto.GetListQueryNoPeriod) (dto.PaginationResponse[domain.UserListItem], error)
 }
 
-func NewUserManagementController(dbConn *gorm.DB, minio miniostorage.StorageMinio, dbCache cache.Cache, rz *logger.ReZero) UserManagementController {
+func NewUserManagementController(dbConn *gorm.DB, controller BaseController, port port.Port) UserManagementController {
 	return UserManagementController{
-		BaseController: NewBaseController(dbCache, dbConn),
-		uc:             user_management.NewUsecase(dbConn, dbCache, minio, rz),
+		BaseController: controller,
+		uc:             user_management.NewUsecase(dbConn, port),
 	}
 }
 

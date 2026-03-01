@@ -1,12 +1,11 @@
 package controller
 
 import (
+	"base-be-golang/internal/core/port"
 	"base-be-golang/internal/core/usecase/health"
-	"base-be-golang/pkg/cache"
 	"base-be-golang/pkg/dto"
-	"base-be-golang/pkg/logger"
-	"base-be-golang/pkg/miniostorage"
 	"context"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -20,10 +19,10 @@ type HealthCheckUsecase interface {
 	CheckHealth(ctx context.Context) (map[string]string, error)
 }
 
-func NewHealthController(dbCache cache.Cache, dbConn *gorm.DB, minioConn miniostorage.StorageMinio, rz *logger.ReZero) HealthCheckController {
+func NewHealthController(dbConn *gorm.DB, controller BaseController, port port.Port) HealthCheckController {
 	return HealthCheckController{
-		BaseController: NewBaseController(dbCache, dbConn),
-		uc:             health.New(dbConn, dbCache, minioConn, rz),
+		BaseController: controller,
+		uc:             health.New(dbConn, port),
 	}
 }
 

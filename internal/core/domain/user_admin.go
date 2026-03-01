@@ -10,6 +10,7 @@ type UserAdmin struct {
 	Code       string       `json:"code"`
 	FullName   string       `json:"fullName"`
 	Email      string       `json:"email"`
+	ChatRef    string       `json:"chatRef"`
 	Phone      string       `json:"phone"`
 	Role       MasterRole   `gorm:"foreignKey:RoleID" json:"role"`
 	RoleID     uint         `gorm:"column:role_id" json:"roleID"`

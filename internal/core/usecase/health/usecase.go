@@ -2,10 +2,8 @@ package health
 
 import (
 	"base-be-golang/internal/core/port"
-	"base-be-golang/pkg/cache"
-	"base-be-golang/pkg/logger"
-	"base-be-golang/pkg/miniostorage"
 	"context"
+
 	"gorm.io/gorm"
 )
 
@@ -14,9 +12,9 @@ type Usecase struct {
 	dbGorm *gorm.DB
 }
 
-func New(dbConn *gorm.DB, dbCache cache.Cache, minioConn miniostorage.StorageMinio, rz *logger.ReZero) Usecase {
+func New(dbConn *gorm.DB, prt port.Port) Usecase {
 	return Usecase{
-		Port:   port.NewPort(dbConn, dbCache, minioConn, rz),
+		Port:   prt,
 		dbGorm: dbConn,
 	}
 }

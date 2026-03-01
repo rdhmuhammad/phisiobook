@@ -3,12 +3,10 @@ package homepage
 import (
 	"base-be-golang/internal/core/domain"
 	"base-be-golang/internal/core/port"
-	"base-be-golang/pkg/cache"
 	"base-be-golang/pkg/db"
-	"base-be-golang/pkg/logger"
-	"base-be-golang/pkg/miniostorage"
 	"context"
 	"fmt"
+
 	"gorm.io/gorm"
 )
 
@@ -19,10 +17,10 @@ type Usecase struct {
 	therapistRepo db.GenericRepository[domain.Therapist]
 }
 
-func New(dbConn *gorm.DB, dbCache cache.Cache, minioConn miniostorage.StorageMinio, rz *logger.ReZero) Usecase {
+func New(dbConn *gorm.DB, prt port.Port) Usecase {
 	return Usecase{
 		therapistRepo: db.NewGenericeRepo(dbConn, domain.Therapist{}),
-		Port:          port.NewPort(dbConn, dbCache, minioConn, rz),
+		Port:          prt,
 		repo:          db.NewGenericeRepo(dbConn, domain.SummaryHomepage{}),
 		cityRepo:      db.NewGenericeRepo(dbConn, domain.MasterCity{}),
 	}

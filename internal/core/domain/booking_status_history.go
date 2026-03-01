@@ -7,8 +7,7 @@ type BookingStatusHistory struct {
 	Notes     string `gorm:"column:notes;type:text" json:"notes"`
 
 	// Relations
-	Booking *Booking             `gorm:"foreignKey:BookingID" json:"booking,omitempty"`
-	Status  *MasterBookingStatus `gorm:"foreignKey:StatusID" json:"status,omitempty"`
+	Status *MasterBookingStatus `gorm:"foreignKey:StatusID" json:"status,omitempty"`
 }
 
 func (b BookingStatusHistory) TableName() string {

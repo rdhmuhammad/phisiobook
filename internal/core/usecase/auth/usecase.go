@@ -4,26 +4,24 @@ import (
 	"base-be-golang/internal/constant"
 	"base-be-golang/internal/core/domain"
 	"base-be-golang/internal/core/port"
-	"base-be-golang/pkg/cache"
 	"base-be-golang/pkg/db"
 	"base-be-golang/pkg/localerror"
-	"base-be-golang/pkg/logger"
 	"base-be-golang/pkg/mailing"
 	"base-be-golang/pkg/middleware"
-	"base-be-golang/pkg/miniostorage"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/schema"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type Usecase struct {
@@ -34,12 +32,12 @@ type Usecase struct {
 	port.Port
 }
 
-func NewUsecase(dbConn *gorm.DB, cache cache.Cache, conn miniostorage.StorageMinio, rz *logger.ReZero) Usecase {
+func NewUsecase(dbConn *gorm.DB, prt port.Port) Usecase {
 	return Usecase{
 		masterRoleRepo: db.NewGenericeRepo[domain.MasterRole](dbConn, domain.MasterRole{}),
 		userAdminRepo:  db.NewGenericeRepo[domain.UserAdmin](dbConn, domain.UserAdmin{}),
 		userRepo:       db.NewGenericeRepo[domain.User](dbConn, domain.User{}),
-		Port:           port.NewPort(dbConn, cache, conn, rz),
+		Port:           prt,
 		dbTrx: db.NewDBTransaction(dbConn,
 			db.NewGenericeRepoPointr(dbConn, domain.User{}),
 			db.NewGenericeRepoPointr(dbConn, domain.Therapist{}),
@@ -264,21 +262,7 @@ func (u Usecase) Register(ctx context.Context, request RegisterRequest) (Registe
 
 	u.dbTrx.Begin()
 	defer func(err error) {
-		if r := recover(); r != nil {
-			err := u.dbTrx.End(fmt.Errorf("recovery"))
-			if err != nil {
-				u.Errhandler.ErrorPrint(err)
-				middleware.CaptureErrorUsecase(ctx, err)
-				return
-			}
-		}
-
-		err = u.dbTrx.End(err)
-		if err != nil {
-			u.Errhandler.ErrorPrint(err)
-			middleware.CaptureErrorUsecase(ctx, err)
-			return
-		}
+		db.TransactionEnd(ctx, &u.dbTrx, err)
 	}(err)
 
 	if request.RoleName == constant.RolesIsTerapis {

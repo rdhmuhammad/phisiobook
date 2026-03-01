@@ -3,17 +3,22 @@ package domain
 import (
 	"base-be-golang/internal/constant"
 	"base-be-golang/pkg/localerror"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type RoomSession struct {
 	ID               primitive.ObjectID `bson:"_id,omitempty"`
-	SocketRoomID     string             `json:"socket_room_id" bson:"socket_room_id"`
 	SocketUserID     string             `json:"socket_user_id" bson:"socket_user_id"`
+	UserFullName     string             `json:"user_full_name" bson:"user_full_name"`
+	UserRef          string             `json:"user_ref" bson:"user_ref"`
 	UserIsLive       bool               `json:"user_is_live" bson:"user_is_live"`
 	SocketEmployeeID string             `json:"socket_employee_id" bson:"socket_employee_id"`
+	EmployeeFullName string             `json:"employee_full_name" bson:"employee_full_name"`
+	EmployeeRef      string             `json:"employee_ref" bson:"employee_ref"`
 	EmployeeIsLive   bool               `json:"employee_is_live" bson:"employee_is_live"`
-	RoomCode         string             `json:"room_code" bson:"room_code"`
+	BookCode         string             `json:"book_code" bson:"book_code"`
+	IsValid          bool               `json:"is_valid" bson:"is_valid"`
 	RoomIsLive       bool               `json:"room_is_live" bson:"room_is_live"`
 }
 
@@ -56,6 +61,27 @@ func (receiver *RoomSession) GetParticipantSocketID(role string) (string, error)
 	default:
 		return "", localerror.AccessControlError{Msg: "invalid role"}
 	}
+}
+
+func (receiver *RoomSession) GetActorName(userRef string) string {
+	switch userRef {
+	case receiver.UserRef:
+		return receiver.UserFullName
+	case receiver.EmployeeRef:
+		return receiver.EmployeeFullName
+	}
+	return ""
+}
+
+func (receiver *RoomSession) GetToSocketID(userRef string) string {
+	switch userRef {
+	case receiver.UserRef:
+		return receiver.EmployeeRef
+	case receiver.EmployeeRef:
+		return receiver.EmployeeRef
+	}
+
+	return ""
 }
 
 func (receiver *RoomSession) SetParticipantSocketID(role string, id string) error {

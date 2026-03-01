@@ -1,16 +1,15 @@
 package controller
 
 import (
+	"base-be-golang/internal/core/port"
 	"base-be-golang/internal/core/usecase/homepage"
-	"base-be-golang/pkg/cache"
 	"base-be-golang/pkg/dto"
-	"base-be-golang/pkg/logger"
-	"base-be-golang/pkg/miniostorage"
 	"context"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type HomepageController struct {
@@ -24,10 +23,10 @@ type HomepageUsecase interface {
 	GetTherapist(ctx context.Context, cityId uint) ([]homepage.TherapistDropdownResponse, error)
 }
 
-func NewHomepageController(dbCache cache.Cache, dbConn *gorm.DB, minioConn miniostorage.StorageMinio, rz *logger.ReZero) HomepageController {
+func NewHomepageController(dbConn *gorm.DB, controller BaseController, port port.Port) HomepageController {
 	return HomepageController{
-		BaseController: NewBaseController(dbCache, dbConn),
-		uc:             homepage.New(dbConn, dbCache, minioConn, rz),
+		BaseController: controller,
+		uc:             homepage.New(dbConn, port),
 	}
 }
 

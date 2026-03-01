@@ -5,4 +5,6 @@ const (
 	BookingStatusScheduled = "scheduled"
 	BookingStatusCompleted = "completed"
 	BookingStatusCanceled  = "canceled"
+
+	PaymentStatusPending = "pending"
 )

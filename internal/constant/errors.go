@@ -39,6 +39,12 @@ var (
 	GetCategories    = "GetCategoriesSuccess"
 
 	// Not Found
-	UserNotFound    = "UserNotFound"
-	ServiceNotFound = "ServiceNotFound"
+	UserNotFound     = "UserNotFound"
+	ServiceNotFound  = "ServiceNotFound"
+	RoomChatNotFound = "RoomChatNotFound"
+	RoomNotValid     = "RoomNotValid"
+	BookingNotFound  = "BookingNotFound"
+
+	// Booking
+	UpdateStatusBooking = "UpdateStatusBooking"
 )

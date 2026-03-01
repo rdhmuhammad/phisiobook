@@ -4,6 +4,7 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type CacheChat struct {
 	ID      primitive.ObjectID `bson:"_id,omitempty"`
+	FromID  string             `bson:"from_id" json:"from_id"`
 	ToID    string             `bson:"to_id" json:"to_id"`
 	Message string             `bson:"message" json:"message"`
 	RoomID  string             `bson:"room_id" json:"room_id"`
