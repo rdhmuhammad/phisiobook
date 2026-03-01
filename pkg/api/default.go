@@ -1,18 +1,20 @@
 package api
 
 import (
-	"base-be-golang/internal/adapter/controller"
 	"base-be-golang/pkg/cache"
+	"base-be-golang/pkg/cio"
 	"base-be-golang/pkg/db"
 	"base-be-golang/pkg/logger"
 	"base-be-golang/pkg/middleware"
 	"base-be-golang/pkg/miniostorage"
+	"base-be-golang/pkg/mongodb"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
-	"os"
-	"time"
 )
 
 func Default() *Api {
@@ -45,6 +47,8 @@ func Default() *Api {
 	// Add custom Sentry middleware for request enrichment
 	server.Use(middleware.SentryMiddleware())
 
+	socket := cio.New(server)
+
 	dboConn, err := db.Default()
 	if err != nil {
 		panic(fmt.Sprintf("panic at db connection: %s", err.Error()))
@@ -59,28 +63,23 @@ func Default() *Api {
 		SecretKey: os.Getenv("MINIO_SECRET_KEY"),
 	})
 
-	//mongoConn := mongodb.NewConnection(mongodb.Connection{
-	//	Username: os.Getenv("MONGODB_USERNAME"),
-	//	Password: os.Getenv("MONGODB_PASSWORD"),
-	//	Host:     os.Getenv("MONGODB_HOST"),
-	//	Port:     os.Getenv("MONGODB_PORT"),
-	//	Database: os.Getenv("MONGODB_DATABASE"),
-	//})
-
-	//chatHub := chat_io.NewHub(caching_chat.NewUsecase(*mongoConn))
+	mongoConn := mongodb.NewConnection(mongodb.Connection{
+		Username: os.Getenv("MONGODB_USERNAME"),
+		Password: os.Getenv("MONGODB_PASSWORD"),
+		Host:     os.Getenv("MONGODB_HOST"),
+		Port:     os.Getenv("MONGODB_PORT"),
+		Database: os.Getenv("MONGODB_DATABASE"),
+	})
 
 	reZero := logger.DefaultLogger()
 
-	var routers = []Router{
-		//controller.NewChatController(chatHub, &reZero),
-		controller.NewAuthController(dboConn, dbCache, minioConn, &reZero),
-		controller.NewHealthController(dbCache, dboConn, minioConn, &reZero),
-		controller.NewHomepageController(dbCache, dboConn, minioConn, &reZero),
-		//controller.NewServiceController(dboConn, minioConn, dbCache, &reZero),
-	}
-
 	return &Api{
-		server:  server,
-		routers: routers,
+		mongoConn: mongoConn,
+		server:    server,
+		socket:    socket,
+		db:        dboConn,
+		cache:     dbCache,
+		minioStr:  minioConn,
+		reZero:    &reZero,
 	}
 }

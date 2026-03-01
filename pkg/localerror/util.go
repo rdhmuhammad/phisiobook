@@ -4,6 +4,7 @@ import (
 	"base-be-golang/internal/constant"
 	"base-be-golang/pkg/logger"
 	"errors"
+
 	"gorm.io/gorm"
 )
 
@@ -22,6 +23,12 @@ type AccessControlError struct {
 
 func (e AccessControlError) Error() string {
 	return e.Msg
+}
+
+func AccessNotAllowed(err string) error {
+	return AccessControlError{
+		Msg: err,
+	}
 }
 
 func AccessNotAllowedUserNotFound(err error) error {

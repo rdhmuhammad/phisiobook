@@ -1,18 +1,22 @@
 package mapper
 
 import (
+	"base-be-golang/internal/adapter/payload"
 	"base-be-golang/internal/constant"
 	"base-be-golang/pkg/dto"
 	localerror2 "base-be-golang/pkg/localerror"
 	"base-be-golang/pkg/localize"
+	"base-be-golang/pkg/logger"
 	"base-be-golang/pkg/middleware"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/go-sql-driver/mysql"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-sql-driver/mysql"
+	"github.com/zishang520/socket.io/servers/socket/v3"
 )
 
 // TODO: validation move to struct tags
@@ -77,7 +81,53 @@ func (receiver mapper) GetAuthDataFromContext(c *gin.Context) middleware.UserDat
 	return authData
 }
 
+func (receiver mapper) ErrorSocket(client *socket.Socket, err error) {
+	lang := client.Handshake().Query.Query().Get("lang")
+	if lang == "" {
+		lang = "en"
+	}
+	if err != nil {
+		if ok, invErr := receiver.IsInvalidDataError(err); ok {
+			err = client.Emit(payload.AlertError.String(),
+				receiver.localizer.GetLocalized(lang, invErr.Error()))
+			if err != nil {
+				logger.Error(err)
+			}
+			client.Disconnect(true)
+		} else if receiver.IsAccessControlError(err) {
+			err = client.Emit(payload.AlertError.String(),
+				receiver.localizer.GetLocalized(lang, constant.AccessNotAllowed))
+			if err != nil {
+				logger.Error(err)
+			}
+			client.Disconnect(true)
+		} else {
+			err = client.Emit(payload.AlertError.String(),
+				receiver.localizer.GetLocalized(lang, constant.InternalError))
+			if err != nil {
+				logger.Error(err)
+			}
+		}
+
+	}
+}
+
 func (m mapper) NewResponse(c *gin.Context, res *dto.Response, err error) {
+	userData := m.GetAuthDataFromContext(c)
+	ok := m.ErrorResponse(c, err)
+	if ok {
+		return
+	}
+	if res != nil {
+		res.Message = m.localizer.GetLocalized(userData.Lang, res.Message)
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func (m mapper) ErrorResponse(c *gin.Context, err error) bool {
 	userData := m.GetAuthDataFromContext(c)
 	if err != nil {
 		if ok, invErr := m.IsInvalidDataError(err); ok {
@@ -94,14 +144,14 @@ func (m mapper) NewResponse(c *gin.Context, res *dto.Response, err error) {
 				http.StatusBadRequest,
 				dto.DefaultErrorInvalidDataWithMessage(m.localizer.GetLocalized(userData.Lang, err.Error(), templates...)),
 			)
-			return
+			return true
 		}
 		if m.IsAccessControlError(err) {
 			c.JSON(
 				http.StatusUnauthorized,
 				dto.DefaultErrorInvalidDataWithMessage(m.localizer.GetLocalized(userData.Lang, err.Error())),
 			)
-			return
+			return true
 		}
 		middleware.CaptureError(c, err)
 		fmt.Printf("ERROR: %s \n", err.Error())
@@ -109,15 +159,9 @@ func (m mapper) NewResponse(c *gin.Context, res *dto.Response, err error) {
 			http.StatusInternalServerError,
 			dto.DefaultErrorResponseWithMessage(m.localizer.GetLocalized(userData.Lang, constant.InternalError), err),
 		)
-		return
+		return true
 	}
-	if res != nil {
-		res.Message = m.localizer.GetLocalized(userData.Lang, res.Message)
-		c.JSON(http.StatusOK, res)
-		return
-	}
-
-	c.Status(http.StatusOK)
+	return false
 }
 
 func (m mapper) IsInvalidDataError(err error) (bool, localerror2.InvalidDataError) {

@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -25,7 +26,7 @@ type BaseRepo[T BaseEntity] struct {
 	entity     T
 }
 
-func NewBaseRepo[T BaseEntity](conn Conn, entity T) *BaseRepo[T] {
+func NewBaseRepo[T BaseEntity](conn *Conn, entity T) *BaseRepo[T] {
 	collection := conn.GetClient().Database(conn.GetDatabaseName()).Collection(entity.GetCollectionName())
 	return &BaseRepo[T]{
 		entity:     entity,
@@ -138,6 +139,15 @@ func (r *BaseRepo[T]) Exists(ctx context.Context, key string, val string) (bool,
 	return count > 0, nil
 }
 
+func (r *BaseRepo[T]) ExistsContains(ctx context.Context, key string, val string) (bool, error) {
+	filter := bson.D{{key, bson.D{{"$regex", val}}}}
+	count, err := r.collection.CountDocuments(ctx, filter)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 func (r *BaseRepo[T]) ExistsByFilter(ctx context.Context, filter map[string]any) (bool, error) {
 	count, err := r.CountByFilter(ctx, filter)
 	if err != nil {
@@ -149,6 +159,15 @@ func (r *BaseRepo[T]) ExistsByFilter(ctx context.Context, filter map[string]any)
 func (r *BaseRepo[T]) FindOne(ctx context.Context, key string, val string) (T, error) {
 	var result T
 	filter := bson.D{{key, val}}
+	err := r.collection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
+func (r *BaseRepo[T]) FindOneByFilter(ctx context.Context, filter map[string]any) (T, error) {
+	var result T
 	err := r.collection.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
 		return result, err

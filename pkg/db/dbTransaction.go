@@ -1,9 +1,13 @@
 package db
 
 import (
+	"base-be-golang/pkg/logger"
+	"context"
+	"fmt"
+	"reflect"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
-	"reflect"
 )
 
 type DBTransaction struct {
@@ -74,4 +78,23 @@ func (main *DBTransaction) getRepository(repo BaseRepository) BaseRepository {
 	}
 
 	return repo
+}
+
+func TransactionEnd(
+	ctx context.Context,
+	dbTrx *DBTransaction,
+	err error,
+) {
+	if r := recover(); r != nil {
+		err := dbTrx.End(fmt.Errorf("recovery"))
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+	}
+
+	err = dbTrx.End(err)
+	if err != nil {
+		logger.Error(err)
+	}
 }

@@ -6,9 +6,11 @@ import (
 	"base-be-golang/pkg/dto"
 	localerror2 "base-be-golang/pkg/localerror"
 	"base-be-golang/pkg/localize"
+	"io"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-sql-driver/mysql"
-	"io"
+	"github.com/zishang520/socket.io/servers/socket/v3"
 )
 
 type mapper struct {
@@ -22,6 +24,8 @@ func NewMapper() MapperUtility {
 }
 
 type MapperUtility interface {
+	ErrorSocket(client *socket.Socket, err error)
+	ErrorResponse(c *gin.Context, err error) bool
 	NewResponse(c *gin.Context, res *dto.Response, err error)
 	ReplaceLabelErr(template error, params ...string) error
 	ErrorIs(template error, targer error) bool
