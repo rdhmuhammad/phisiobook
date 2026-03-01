@@ -1,0 +1,24 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+actor client.A as client
+actor client.B as bclient
+box socket.IO
+participant socket.server as server <<(C,#ADD1B2)>>
+participant socket.room as room <<(C,#ADD1B2)>>
+end box
+collections mongoDb
+
+client ->> server : on ev=disconnect
+server ->> mongoDb --++ #gold : get cached room
+mongoDb ->> mongoDb : set client leave
+mongoDb ->> mongoDb : check if all client leave
+mongoDb -->> server --
+alt#gold all leaved
+    server ->> room : room.SocketsLeave
+    room -->> server
+else one remaining
+    server ->> bclient : emit ev=notify-offline
+end
+
+@enduml

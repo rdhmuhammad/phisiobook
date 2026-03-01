@@ -1,0 +1,49 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+package api #ebae34{
+    class API{
+        -[]Namespace
+        -start()
+        +Initiate()
+    }
+    interface Namespace{
+        +OnSpace(namespace)
+    }
+
+    Namespace "0" ..* "many" API : containts
+}
+
+package chat #0fc7fa{
+    class ChatSpace{
+        +OnSpace(namespace)
+        +NewNamespace(...)
+    }
+
+    ChatSpace <|.. Namespace
+    ChatSpace --> API
+}
+
+package soc_io {
+    class IO{
+        -client socket.Socket
+        +New(...)
+        +OnConnect(extender func(client socket.Client))
+        +OnDisconnect(extender func(client socket.Client)
+        +On(eventName string, (extender func(client socket.Client))
+    }
+
+    note right of IO::"New(...)"
+        consist logic to initiate
+        socket.io service
+    end note
+    IO --> API : call New(..)
+    API --> API : inject io
+    note right on link
+        for loop, inject io
+        to each space
+    end note
+
+}
+
+@enduml

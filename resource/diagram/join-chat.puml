@@ -1,0 +1,31 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+actor client.A as client
+actor client.B as bclient
+
+box socket.IO
+participant socket.server as server <<(C,#ADD1B2)>>
+participant socket.room as room <<(C,#ADD1B2)>>
+end box
+collections mongoDb
+
+client ->> mongoDb : get all cached messages
+mongoDb -->> client : HTTP 200
+client ->> server : on ev="connected"
+server -->> client : HTTP 101
+client ->> server : on ev="join", arg="roomId"
+server ->> room : join room
+room ->> mongoDb : check if (client,roomId) exist
+mongoDb -->> room
+alt#Gold not exist
+    server ->> mongoDb : cache (client, roomId)
+    room -->> server
+    server ->> bclient : emit ev="notify-join"
+else exist
+    room -->> server
+    server ->> bclient : emit ev="notify-online"
+end
+
+
+@enduml

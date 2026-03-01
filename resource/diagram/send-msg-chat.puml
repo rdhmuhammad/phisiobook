@@ -1,0 +1,17 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+!pragma teoz true
+actor client.A as client
+actor client.B as bclient
+box socket.IO
+participant socket.server as server <<(C,#ADD1B2)>>
+participant socket.room as room <<(C,#ADD1B2)>>
+end box
+collections mongoDb
+
+client ->> server : on ev=message
+server -> room : broadcast to room
+& room -> mongoDb : cache message
+room -->> server
+server ->> bclient : emit ev=message
+@enduml
