@@ -12,12 +12,13 @@ import (
 	"encoding/base32"
 	"encoding/hex"
 	"fmt"
-	"golang.org/x/crypto/bcrypt"
-	"golang.org/x/crypto/scrypt"
-	"golang.org/x/crypto/sha3"
 	"math/big"
 	"strconv"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/crypto/scrypt"
+	"golang.org/x/crypto/sha3"
 )
 
 type Engine struct {
@@ -87,6 +88,27 @@ func (dc Engine) GenerateCodeTRX() string {
 	}
 
 	return fmt.Sprintf("%s%s-%X", prefix, randomCode, timestamp)
+}
+
+func (dc Engine) GenerateCode(prefix string) string {
+	const (
+		charset    = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+		codeLength = 6
+		charsetLen = int64(len(charset))
+	)
+
+	// Generate a random code.
+	randomCode := make([]byte, codeLength)
+	for i := range randomCode {
+		// Generate a random index based on the charset length.
+		index, err := rand.Int(rand.Reader, big.NewInt(charsetLen))
+		if err != nil {
+			panic("Failed to generate random index")
+		}
+		randomCode[i] = charset[index.Int64()]
+	}
+
+	return fmt.Sprintf("%s%s", prefix, randomCode)
 }
 
 type UniquePredicate func(result string) (bool, error)

@@ -1,7 +1,7 @@
 package service
 
 import (
-	"base-be-golang/internal/core/domain"
+	"github.com/rdhmuhammad/phisiobook/internal/core/domain"
 )
 
 // CreateServiceRequest represents the request body for creating a service
@@ -41,15 +41,15 @@ type ServiceListItem struct {
 
 // ServiceDetailResponse represents the full detail of a service
 type ServiceDetailResponse struct {
-	ID            uint                         `json:"id"`
-	Name          string                       `json:"name"`
-	CategoryID    uint                         `json:"categoryId"`
-	CategoryName  string                       `json:"categoryName"`
-	Description   string                       `json:"description"`
-	Duration      int                          `json:"duration"`
-	Price         float64                      `json:"price"`
-	Commission    float64                      `json:"commission"`
-	Areas         []ServiceAreaItem            `json:"areas"`
+	ID            uint                          `json:"id"`
+	Name          string                        `json:"name"`
+	CategoryID    uint                          `json:"categoryId"`
+	CategoryName  string                        `json:"categoryName"`
+	Description   string                        `json:"description"`
+	Duration      int                           `json:"duration"`
+	Price         float64                       `json:"price"`
+	Commission    float64                       `json:"commission"`
+	Areas         []ServiceAreaItem             `json:"areas"`
 	IncludedItems []ServiceIncludedItemResponse `json:"includedItems"`
 }
 

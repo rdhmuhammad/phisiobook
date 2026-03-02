@@ -1,15 +1,15 @@
 package mapper
 
 import (
-	"base-be-golang/internal/adapter/payload"
-	"base-be-golang/internal/constant"
-	"base-be-golang/pkg/dto"
-	localerror2 "base-be-golang/pkg/localerror"
-	"base-be-golang/pkg/localize"
-	"base-be-golang/pkg/logger"
-	"base-be-golang/pkg/middleware"
 	"errors"
 	"fmt"
+	"github.com/rdhmuhammad/phisiobook/internal/adapter/payload"
+	"github.com/rdhmuhammad/phisiobook/internal/constant"
+	"github.com/rdhmuhammad/phisiobook/pkg/dto"
+	localerror2 "github.com/rdhmuhammad/phisiobook/pkg/localerror"
+	"github.com/rdhmuhammad/phisiobook/pkg/localize"
+	"github.com/rdhmuhammad/phisiobook/pkg/logger"
+	"github.com/rdhmuhammad/phisiobook/pkg/middleware"
 	"net/http"
 	"regexp"
 	"strings"

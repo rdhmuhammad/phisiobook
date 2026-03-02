@@ -1,0 +1,9 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+start
+:request login;
+:token created;
+:data stored to cache;
+
+@enduml

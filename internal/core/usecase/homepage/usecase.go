@@ -1,23 +1,24 @@
 package homepage
 
 import (
-	"base-be-golang/internal/core/domain"
-	"base-be-golang/internal/core/port"
-	"base-be-golang/pkg/db"
 	"context"
 	"fmt"
+
+	"github.com/rdhmuhammad/phisiobook/internal/core/domain"
+	"github.com/rdhmuhammad/phisiobook/pkg/db"
+	"github.com/rdhmuhammad/phisiobook/shared/base"
 
 	"gorm.io/gorm"
 )
 
 type Usecase struct {
-	port.Port
+	base.Port
 	repo          db.GenericRepository[domain.SummaryHomepage]
 	cityRepo      db.GenericRepository[domain.MasterCity]
 	therapistRepo db.GenericRepository[domain.Therapist]
 }
 
-func New(dbConn *gorm.DB, prt port.Port) Usecase {
+func New(dbConn *gorm.DB, prt base.Port) Usecase {
 	return Usecase{
 		therapistRepo: db.NewGenericeRepo(dbConn, domain.Therapist{}),
 		Port:          prt,
@@ -30,7 +31,7 @@ func (uc Usecase) GetSummaryHome(ctx context.Context) (*SummaryHomeResponse, err
 	// Fetch the summary data from database
 	summaries, err := uc.repo.FindAll(ctx)
 	if err != nil {
-		return nil, uc.Errhandler.ErrorReturn(err)
+		return nil, uc.ErrHandler.ErrorReturn(err)
 	}
 
 	// If no data exists, return default response
@@ -82,7 +83,7 @@ func (uc Usecase) GetTherapist(ctx context.Context, cityId uint) ([]TherapistDro
 		db.ExpressionOr,
 	)
 	if err != nil {
-		return nil, uc.Errhandler.ErrorReturn(err)
+		return nil, uc.ErrHandler.ErrorReturn(err)
 	}
 
 	var result = make([]TherapistDropdownResponse, len(therapist))

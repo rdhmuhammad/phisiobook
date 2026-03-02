@@ -1,0 +1,12 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+start
+:request get user info;
+:verify header from token;
+fork
+    :data from token stored to context;
+fork again
+    :data from token stored to cache;
+
+@enduml

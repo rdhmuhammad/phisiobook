@@ -1,14 +1,14 @@
 package api
 
 import (
-	"base-be-golang/pkg/cache"
-	"base-be-golang/pkg/cio"
-	"base-be-golang/pkg/db"
-	"base-be-golang/pkg/logger"
-	"base-be-golang/pkg/middleware"
-	"base-be-golang/pkg/miniostorage"
-	"base-be-golang/pkg/mongodb"
 	"fmt"
+	"github.com/rdhmuhammad/phisiobook/pkg/cache"
+	"github.com/rdhmuhammad/phisiobook/pkg/cio"
+	"github.com/rdhmuhammad/phisiobook/pkg/db"
+	"github.com/rdhmuhammad/phisiobook/pkg/logger"
+	"github.com/rdhmuhammad/phisiobook/pkg/middleware"
+	"github.com/rdhmuhammad/phisiobook/pkg/miniostorage"
+	"github.com/rdhmuhammad/phisiobook/pkg/mongodb"
 	"os"
 	"time"
 

@@ -1,25 +1,27 @@
 package socket
 
 import (
-	"base-be-golang/internal/adapter/controller"
-	"base-be-golang/internal/adapter/payload"
-	"base-be-golang/internal/core/port"
-	"base-be-golang/internal/core/usecase/caching_chat"
-	"base-be-golang/pkg/cio"
-	"base-be-golang/pkg/logger"
-	"base-be-golang/pkg/mongodb"
 	"context"
+
+	"github.com/rdhmuhammad/phisiobook/internal/adapter/controller"
+	"github.com/rdhmuhammad/phisiobook/internal/adapter/payload"
+	"github.com/rdhmuhammad/phisiobook/internal/core/usecase/caching_chat"
+	"github.com/rdhmuhammad/phisiobook/pkg/cio"
+	"github.com/rdhmuhammad/phisiobook/pkg/logger"
+	"github.com/rdhmuhammad/phisiobook/pkg/mongodb"
+	"github.com/rdhmuhammad/phisiobook/shared/base"
+
 	"time"
 
 	"github.com/zishang520/socket.io/servers/socket/v3"
 )
 
 type ChatSocket struct {
-	BaseSocket
+	base.BaseSocket
 	cachedUc controller.CachedChatUsecase
 }
 
-func NewChatSocket(mongoConn *mongodb.Conn, baseSocket BaseSocket, prt port.Port) ChatSocket {
+func NewChatSocket(mongoConn *mongodb.Conn, baseSocket base.BaseSocket, prt base.Port) ChatSocket {
 	return ChatSocket{
 		cachedUc:   caching_chat.NewUsecase(mongoConn, prt),
 		BaseSocket: baseSocket,
@@ -54,7 +56,7 @@ func (ctrl ChatSocket) cacheRoom(io *cio.NS, client *socket.Socket, action actio
 	}
 	newContext, cancle := context.WithDeadline(
 		context.Background(),
-		time.Now().Add(time.Second*time.Duration(ctrl.env.GetInt("TIMEOUT_IN_SECOND", 5))),
+		time.Now().Add(time.Second*time.Duration(ctrl.Env.GetInt("TIMEOUT_IN_SECOND", 5))),
 	)
 	result, err := ctrl.cachedUc.CacheRoom(
 		newContext,
@@ -66,7 +68,7 @@ func (ctrl ChatSocket) cacheRoom(io *cio.NS, client *socket.Socket, action actio
 		cancle,
 	)
 	if err != nil {
-		ctrl.mapper.ErrorSocket(client, err)
+		ctrl.Mapper.ErrorSocket(client, err)
 		return
 	}
 
@@ -102,7 +104,7 @@ func (ctrl ChatSocket) SendChat(io *cio.NS, client *socket.Socket, message cio.M
 
 	err := io.Space.To(socket.Room(sentMsg.RoomID)).Emit(payload.Message.String(), sentMsg)
 	if err != nil {
-		ctrl.mapper.ErrorSocket(client, err)
+		ctrl.Mapper.ErrorSocket(client, err)
 		return
 	}
 

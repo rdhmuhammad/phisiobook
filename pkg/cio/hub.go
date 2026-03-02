@@ -1,7 +1,7 @@
 package cio
 
 import (
-	"base-be-golang/pkg/localerror"
+	"github.com/rdhmuhammad/phisiobook/pkg/localerror"
 	"time"
 
 	"github.com/gin-gonic/gin"

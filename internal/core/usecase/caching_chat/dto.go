@@ -1,6 +1,8 @@
 package caching_chat
 
-import "base-be-golang/pkg/dto"
+import (
+	"github.com/rdhmuhammad/phisiobook/shared/payload"
+)
 
 type CachedChat struct {
 	ToID    string `json:"to_id"`
@@ -33,5 +35,5 @@ type CacheChatRequest struct {
 type GetCachedRequest struct {
 	RoomId  string
 	ActorId string
-	Filter  *dto.GetListQueryNoPeriod
+	Filter  *payload.GetListQueryNoPeriod
 }

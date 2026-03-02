@@ -3,9 +3,11 @@
 package mapper
 
 import (
-	"base-be-golang/pkg/dto"
-	localerror2 "base-be-golang/pkg/localerror"
-	"base-be-golang/pkg/localize"
+	"github.com/rdhmuhammad/phisiobook/pkg/dto"
+	localerror2 "github.com/rdhmuhammad/phisiobook/pkg/localerror"
+	"github.com/rdhmuhammad/phisiobook/pkg/localize"
+	"github.com/rdhmuhammad/phisiobook/shared/payload"
+
 	"io"
 
 	"github.com/gin-gonic/gin"
@@ -26,7 +28,7 @@ func NewMapper() MapperUtility {
 type MapperUtility interface {
 	ErrorSocket(client *socket.Socket, err error)
 	ErrorResponse(c *gin.Context, err error) bool
-	NewResponse(c *gin.Context, res *dto.Response, err error)
+	NewResponse(c *gin.Context, res *payload.Response, err error)
 	ReplaceLabelErr(template error, params ...string) error
 	ErrorIs(template error, targer error) bool
 	TranslateSQLErr(mySqlErr *mysql.MySQLError, methodName string) error

@@ -1,24 +1,24 @@
 package booking
 
 import (
-	"base-be-golang/internal/constant"
-	"base-be-golang/internal/core/domain"
-	"base-be-golang/internal/core/port"
-	"base-be-golang/pkg/cache"
-	"base-be-golang/pkg/db"
-	"base-be-golang/pkg/localerror"
-	"base-be-golang/pkg/logger"
-	"base-be-golang/pkg/miniostorage"
-	"base-be-golang/pkg/mongodb"
 	"context"
 	"errors"
+
+	"github.com/rdhmuhammad/phisiobook/internal/constant"
+	"github.com/rdhmuhammad/phisiobook/internal/core/domain"
+	"github.com/rdhmuhammad/phisiobook/pkg/db"
+	"github.com/rdhmuhammad/phisiobook/pkg/localerror"
+	"github.com/rdhmuhammad/phisiobook/pkg/mongodb"
+	"github.com/rdhmuhammad/phisiobook/shared/base"
+	"github.com/rdhmuhammad/phisiobook/shared/payload"
+
 	"strconv"
 
 	"gorm.io/gorm"
 )
 
 type Usecase struct {
-	port.Port
+	base.Port
 	dbTrx          db.DBTransaction
 	statusHistRepo db.GenericRepository[domain.BookingStatusHistory]
 	statusRepo     db.GenericRepository[domain.MasterBookingStatus]
@@ -26,20 +26,24 @@ type Usecase struct {
 	chatRoomRepo   mongodb.BaseRepo[domain.RoomSession]
 	therapistRepo  db.GenericRepository[domain.Therapist]
 	settingRepo    db.GenericRepository[domain.Setting]
-	userRepo       db.GenericRepository[domain.User]
-	userAdminRepo  db.GenericRepository[domain.UserAdmin]
+	userRepo       db.GenericRepository[domain.UserExtended]
+	userAdminRepo  db.GenericRepository[domain.UserAdminExtended]
 }
 
-func NewUsecase(dbCon *gorm.DB, dbCache cache.Cache, minioConn miniostorage.StorageMinio, rz *logger.ReZero) Usecase {
+func NewUsecase(dbCon *gorm.DB, prt base.Port) Usecase {
 	return Usecase{
 		statusHistRepo: db.NewGenericeRepo(dbCon, domain.BookingStatusHistory{}),
-		userRepo:       db.NewGenericeRepo(dbCon, domain.User{}),
-		userAdminRepo:  db.NewGenericeRepo(dbCon, domain.UserAdmin{}),
+		userRepo:       db.NewGenericeRepo(dbCon, domain.UserExtended{}),
+		userAdminRepo:  db.NewGenericeRepo(dbCon, domain.UserAdminExtended{}),
 		bookingRepo:    db.NewGenericeRepo(dbCon, domain.Booking{}),
-		Port:           port.NewPort(dbCon, dbCache, minioConn, rz),
+		Port:           prt,
 		therapistRepo:  db.NewGenericeRepo(dbCon, domain.Therapist{}),
 		settingRepo:    db.NewGenericeRepo(dbCon, domain.Setting{}),
-		statusRepo:     db.NewGenericeRepo[domain.MasterBookingStatus](dbCon, domain.MasterBookingStatus{}),
+		statusRepo:     db.NewGenericeRepo(dbCon, domain.MasterBookingStatus{}),
+		dbTrx: db.NewDBTransaction(dbCon,
+			db.NewGenericeRepoPointr(dbCon, domain.Booking{}),
+			db.NewGenericeRepoPointr(dbCon, domain.BookingStatusHistory{}),
+		),
 	}
 }
 
@@ -49,7 +53,7 @@ func (uc Usecase) UpdateStatus(ctx context.Context, request UpdateStatus) (roomI
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return roomId, localerror.InvalidData(constant.BookingNotFound)
 		}
-		return roomId, uc.Errhandler.ErrorReturn(err)
+		return roomId, uc.ErrHandler.ErrorReturn(err)
 	}
 
 	uc.dbTrx.Begin()
@@ -59,9 +63,9 @@ func (uc Usecase) UpdateStatus(ctx context.Context, request UpdateStatus) (roomI
 
 	status, err := uc.statusRepo.FindOneByExpression(ctx, db.Query(db.Equal(request.Status, "name")))
 	if err != nil {
-		return roomId, uc.Errhandler.ErrorReturn(err)
+		return roomId, uc.ErrHandler.ErrorReturn(err)
 	}
-	userLogin := uc.Auth.GetUserLogin(ctx)
+	userLogin := uc.Security.GetUserContext(ctx)
 
 	history := domain.BookingStatusHistory{
 		BookingID: booking.ID,
@@ -72,7 +76,7 @@ func (uc Usecase) UpdateStatus(ctx context.Context, request UpdateStatus) (roomI
 	_, err = db.GetRepo(&uc.dbTrx, domain.BookingStatusHistory{}).
 		Store(ctx, history)
 	if err != nil {
-		return roomId, uc.Errhandler.ErrorReturn(err)
+		return roomId, uc.ErrHandler.ErrorReturn(err)
 	}
 
 	booking.SetUpdated(userLogin.Email)
@@ -82,7 +86,7 @@ func (uc Usecase) UpdateStatus(ctx context.Context, request UpdateStatus) (roomI
 	err = db.GetRepo(&uc.dbTrx, domain.Booking{}).
 		Update(ctx, booking)
 	if err != nil {
-		return roomId, uc.Errhandler.ErrorReturn(err)
+		return roomId, uc.ErrHandler.ErrorReturn(err)
 	}
 
 	roomId = booking.RefNumber
@@ -90,14 +94,15 @@ func (uc Usecase) UpdateStatus(ctx context.Context, request UpdateStatus) (roomI
 }
 
 func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingRequest) error {
-	userLogin, err := uc.GetUserLogin(ctx)
+	var userLogin payload.SessionDataUser
+	err := uc.Security.GetSessionLogin(ctx, &userLogin)
 	if err != nil {
-		return uc.Errhandler.ErrorReturn(err)
+		return uc.ErrHandler.ErrorReturn(err)
 	}
 
 	pendingStatus, err := uc.statusRepo.FindOneByExpression(ctx, db.Query(db.Equal(constant.BookingStatusPending, "name")))
 	if err != nil {
-		return uc.Errhandler.ErrorReturn(err)
+		return uc.ErrHandler.ErrorReturn(err)
 	}
 
 	uc.dbTrx.Begin()
@@ -115,22 +120,22 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 	var therapist = tg{}
 	err = uc.therapistRepo.FindOneByExpSelection(ctx, &therapist, db.Query(db.Equal(request.TherapistCode, "code")))
 	if err != nil {
-		return uc.Errhandler.ErrorReturn(err)
+		return uc.ErrHandler.ErrorReturn(err)
 	}
 
 	booking := domain.Booking{
-		UserID:      userLogin.GetID(),
+		UserID:      userLogin.ID,
 		TherapistID: therapist.ID,
 		CityID:      request.CityID,
 		StatusID:    pendingStatus.ID,
 		DateTime:    uc.Clock.ParseWithTzFromCtx(ctx, request.DateTime, "2006-01-02 15:04:05"),
 	}
-	booking.SetCreated(userLogin.GetEmail())
+	booking.SetCreated(userLogin.Email)
 
 	bookingRepo := db.GetRepo(&uc.dbTrx, domain.Booking{})
 	booking, err = bookingRepo.Store(ctx, booking)
 	if err != nil {
-		return uc.Errhandler.ErrorReturn(err)
+		return uc.ErrHandler.ErrorReturn(err)
 	}
 
 	refNumber, err := uc.Davinci.GenerateUniqueKeyWithPredicate(
@@ -146,38 +151,38 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 		},
 	)
 	if err != nil {
-		return uc.Errhandler.ErrorReturn(err)
+		return uc.ErrHandler.ErrorReturn(err)
 	}
 
 	bookCode, err := uc.GenerateCode(ctx, "BOOK-", func(ctx context.Context, code string) (bool, error) {
 		return uc.bookingRepo.IsExist(ctx, "code", code)
 	})
 	if err != nil {
-		return uc.Errhandler.ErrorReturn(err)
+		return uc.ErrHandler.ErrorReturn(err)
 	}
 
 	booking.RefNumber = refNumber
 	booking.Code = bookCode
 	err = bookingRepo.UpdateSelectedCols(ctx, booking, "ref_number", "code")
 	if err != nil {
-		return uc.Errhandler.ErrorReturn(err)
+		return uc.ErrHandler.ErrorReturn(err)
 	}
 
 	statusHistory := domain.BookingStatusHistory{
 		BookingID: booking.ID,
 		StatusID:  pendingStatus.ID,
 	}
-	statusHistory.SetCreated(userLogin.GetAuthCode())
+	statusHistory.SetCreated(userLogin.UserReference)
 
 	histRepo := db.GetRepo(&uc.dbTrx, domain.BookingStatusHistory{})
 	statusHistory, err = histRepo.Store(ctx, statusHistory)
 	if err != nil {
-		return uc.Errhandler.ErrorReturn(err)
+		return uc.ErrHandler.ErrorReturn(err)
 	}
 
 	setting, err := uc.settingRepo.FindOneByExpression(ctx, db.Query(db.Equal(true, "status")))
 	if err != nil {
-		return uc.Errhandler.ErrorReturn(err)
+		return uc.ErrHandler.ErrorReturn(err)
 	}
 
 	// Calculate amounts
@@ -195,12 +200,12 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 		Status:          constant.PaymentStatusPending,
 		ThirdPartyID:    0,
 	}
-	payment.SetCreated(userLogin.GetAuthCode())
+	payment.SetCreated(userLogin.UserReference)
 
 	paymentRepo := db.GetRepo(&uc.dbTrx, domain.Payment{})
 	payment, err = paymentRepo.Store(ctx, payment)
 	if err != nil {
-		return uc.Errhandler.ErrorReturn(err)
+		return uc.ErrHandler.ErrorReturn(err)
 	}
 
 	// Create payment details
@@ -227,50 +232,53 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 
 	paymentDetailRepo := db.GetRepo(&uc.dbTrx, domain.PaymentDetail{})
 	for _, detail := range paymentDetails {
-		detail.SetCreated(userLogin.GetAuthCode())
+		detail.SetCreated(userLogin.UserReference)
 		_, err = paymentDetailRepo.Store(ctx, detail)
 		if err != nil {
-			return uc.Errhandler.ErrorReturn(err)
+			return uc.ErrHandler.ErrorReturn(err)
 		}
 	}
 
 	userRef, err := uc.Davinci.GenerateUniqueKeyWithPredicate(
 		uc.Env.Get("CHAT_USER_SECRET"),
-		strconv.Itoa(int(userLogin.GetID())),
+		strconv.Itoa(int(userLogin.ID)),
 		6,
 		func(result string) (bool, error) {
 			return uc.userRepo.IsExist(ctx, "chat_ref", result)
 		},
 	)
 	if err != nil {
-		return uc.Errhandler.ErrorReturn(err)
+		return uc.ErrHandler.ErrorReturn(err)
 	}
 
-	user := userLogin.(*domain.User)
-	err = db.GetRepo(&uc.dbTrx, domain.User{}).UpdateSelectedCols(ctx, *user, "chat_ref")
+	user := domain.UserExtended{
+		ChatRef: userRef,
+	}
+	user.SetID(userLogin.ID)
+	err = db.GetRepo(&uc.dbTrx, domain.UserExtended{}).UpdateSelectedCols(ctx, user, "chat_ref")
 	if err != nil {
-		return uc.Errhandler.ErrorReturn(err)
+		return uc.ErrHandler.ErrorReturn(err)
 	}
 
 	therapistRef, err := uc.Davinci.GenerateUniqueKeyWithPredicate(
 		uc.Env.Get("CHAT_THERAPIST_SECRET"),
-		strconv.Itoa(int(userLogin.GetID())),
+		strconv.Itoa(int(userLogin.ID)),
 		6,
 		func(result string) (bool, error) {
 			return uc.userAdminRepo.IsExist(ctx, "chat_ref", result)
 		},
 	)
 	if err != nil {
-		return uc.Errhandler.ErrorReturn(err)
+		return uc.ErrHandler.ErrorReturn(err)
 	}
 
-	therapistUser := domain.UserAdmin{}
+	therapistUser := domain.UserAdminExtended{}
 	therapistUser.SetID(therapist.UserID)
 	therapistUser.ChatRef = therapistRef
-	err = db.GetRepo(&uc.dbTrx, domain.UserAdmin{}).
+	err = db.GetRepo(&uc.dbTrx, domain.UserAdminExtended{}).
 		UpdateSelectedCols(ctx, therapistUser, "chat_ref")
 	if err != nil {
-		return uc.Errhandler.ErrorReturn(err)
+		return uc.ErrHandler.ErrorReturn(err)
 	}
 
 	// TODO: add field chatId to therapist and customer
@@ -281,7 +289,7 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 		RoomIsLive:  false,
 	})
 	if err != nil {
-		return uc.Errhandler.ErrorReturn(err)
+		return uc.ErrHandler.ErrorReturn(err)
 	}
 
 	return nil

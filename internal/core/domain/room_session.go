@@ -1,8 +1,8 @@
 package domain
 
 import (
-	"base-be-golang/internal/constant"
-	"base-be-golang/pkg/localerror"
+	"github.com/rdhmuhammad/phisiobook/internal/constant"
+	"github.com/rdhmuhammad/phisiobook/pkg/localerror"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )

@@ -3,9 +3,9 @@
 package clock
 
 import (
-	"base-be-golang/internal/constant"
 	"context"
 	"fmt"
+	"github.com/rdhmuhammad/phisiobook/internal/constant"
 	"time"
 )
 

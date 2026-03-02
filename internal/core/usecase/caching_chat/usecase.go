@@ -1,28 +1,29 @@
 package caching_chat
 
 import (
-	"base-be-golang/internal/constant"
-	"base-be-golang/internal/core/domain"
-	"base-be-golang/internal/core/port"
-	"base-be-golang/pkg/chat_io"
-	"base-be-golang/pkg/dto"
-	"base-be-golang/pkg/localerror"
-	"base-be-golang/pkg/mongodb"
 	"context"
 	"errors"
+	"github.com/rdhmuhammad/phisiobook/internal/constant"
+	"github.com/rdhmuhammad/phisiobook/internal/core/domain"
+	"github.com/rdhmuhammad/phisiobook/pkg/chat_io"
+	"github.com/rdhmuhammad/phisiobook/pkg/localerror"
+	"github.com/rdhmuhammad/phisiobook/pkg/mongodb"
+	"github.com/rdhmuhammad/phisiobook/shared/base"
+	dto "github.com/rdhmuhammad/phisiobook/shared/payload"
+
 	"log"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Usecase struct {
-	port.Port
+	base.Port
 	expiredListener func(isExpired bool)
 	chatRepo        *mongodb.BaseRepo[domain.CacheChat]
 	cacheRoomRepo   *mongodb.BaseRepo[domain.RoomSession]
 }
 
-func NewUsecase(mongoDb *mongodb.Conn, prt port.Port) Usecase {
+func NewUsecase(mongoDb *mongodb.Conn, prt base.Port) Usecase {
 	return Usecase{
 		Port:          prt,
 		cacheRoomRepo: mongodb.NewBaseRepo(mongoDb, domain.RoomSession{}),
@@ -43,7 +44,7 @@ func (u Usecase) CacheRoom(ctx context.Context, request CacheRoomRequest, cancle
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return CacheRoomResponse{}, localerror.InvalidData(constant.RoomChatNotFound)
 		}
-		return CacheRoomResponse{}, u.Errhandler.ErrorReturn(err)
+		return CacheRoomResponse{}, u.ErrHandler.ErrorReturn(err)
 	}
 	var createNew = room.RoomIsLive == false
 
@@ -65,7 +66,7 @@ func (u Usecase) CacheRoom(ctx context.Context, request CacheRoomRequest, cancle
 	room.RoomIsLive = room.UserIsLive || room.EmployeeIsLive
 	_, err = u.cacheRoomRepo.Update(ctx, room)
 	if err != nil {
-		return CacheRoomResponse{}, u.Errhandler.ErrorReturn(err)
+		return CacheRoomResponse{}, u.ErrHandler.ErrorReturn(err)
 	}
 	return CacheRoomResponse{
 		NewRoom:      createNew,
@@ -84,9 +85,9 @@ func (u Usecase) CacheChat(ctx context.Context, request CacheChatRequest) {
 		RoomID:  request.RoomID,
 	})
 	if err != nil {
-		u.Errhandler.ErrorPrint(err)
+		u.ErrHandler.ErrorPrint(err)
 	}
-	u.Errhandler.DebugPrint("value => %v", store)
+	u.ErrHandler.DebugPrint("value => %v", store)
 
 	select {
 	case <-ctx.Done():

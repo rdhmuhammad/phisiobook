@@ -1,10 +1,10 @@
 package localize
 
 import (
-	"base-be-golang/pkg/environment"
 	"encoding/json"
 	"fmt"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/rdhmuhammad/phisiobook/pkg/environment"
 	"golang.org/x/text/language"
 	"os"
 	"path"

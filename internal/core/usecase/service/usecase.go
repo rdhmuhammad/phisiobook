@@ -1,23 +1,21 @@
 package service
 
 import (
-	"base-be-golang/internal/core/domain"
-	"base-be-golang/internal/core/port"
-	"base-be-golang/pkg/cache"
-	"base-be-golang/pkg/db"
-	"base-be-golang/pkg/dto"
-	"base-be-golang/pkg/localerror"
-	"base-be-golang/pkg/logger"
-	"base-be-golang/pkg/miniostorage"
 	"context"
 	"fmt"
+	"github.com/rdhmuhammad/phisiobook/internal/core/domain"
+	"github.com/rdhmuhammad/phisiobook/pkg/db"
+	"github.com/rdhmuhammad/phisiobook/pkg/localerror"
+	"github.com/rdhmuhammad/phisiobook/shared/base"
+	dto "github.com/rdhmuhammad/phisiobook/shared/payload"
+
 	"log"
 
 	"gorm.io/gorm"
 )
 
 type Usecase struct {
-	port.Port
+	base.Port
 	dbConn           *gorm.DB
 	serviceRepo      db.GenericRepository[domain.Service]
 	categoryRepo     db.GenericRepository[domain.MasterServiceCategory]
@@ -25,9 +23,9 @@ type Usecase struct {
 	includedItemRepo db.GenericRepository[domain.ServiceIncludedItem]
 }
 
-func NewUsecase(dbConn *gorm.DB, cacheClient cache.Cache, minioClient miniostorage.StorageMinio, rz *logger.ReZero) Usecase {
+func NewUsecase(dbConn *gorm.DB, prt base.Port) Usecase {
 	return Usecase{
-		Port:             port.NewPort(dbConn, cacheClient, minioClient, rz),
+		Port:             prt,
 		dbConn:           dbConn,
 		serviceRepo:      db.NewGenericeRepo(dbConn, domain.Service{}),
 		categoryRepo:     db.NewGenericeRepo(dbConn, domain.MasterServiceCategory{}),
@@ -38,7 +36,8 @@ func NewUsecase(dbConn *gorm.DB, cacheClient cache.Cache, minioClient miniostora
 
 // CreateService creates a new service with its areas and included items
 func (uc Usecase) CreateService(ctx context.Context, request CreateServiceRequest) (ServiceDetailResponse, error) {
-	userLogin, err := uc.GetUserLogin(ctx)
+	var userLogin = dto.SessionDataUser{}
+	err := uc.Security.GetSessionLogin(ctx, &userLogin)
 	if err != nil {
 		return ServiceDetailResponse{}, err
 	}
@@ -66,7 +65,7 @@ func (uc Usecase) CreateService(ctx context.Context, request CreateServiceReques
 		Price:       request.Price,
 		Commission:  request.Commission,
 	}
-	service.SetCreated(userLogin.GetEmail())
+	service.SetCreated(userLogin.Email)
 
 	serviceRepo := db.NewGenericeRepo(tx, domain.Service{})
 	service, err = serviceRepo.Store(ctx, service)
@@ -83,7 +82,7 @@ func (uc Usecase) CreateService(ctx context.Context, request CreateServiceReques
 				ServiceID: service.ID,
 				CityID:    cityID,
 			}
-			area.SetCreated(userLogin.GetEmail())
+			area.SetCreated(userLogin.Email)
 			_, err = serviceAreaRepo.Store(ctx, area)
 			if err != nil {
 				tx.Rollback()
@@ -100,7 +99,7 @@ func (uc Usecase) CreateService(ctx context.Context, request CreateServiceReques
 				ServiceID: service.ID,
 				Name:      itemName,
 			}
-			item.SetCreated(userLogin.GetEmail())
+			item.SetCreated(userLogin.Email)
 			_, err = includedItemRepo.Store(ctx, item)
 			if err != nil {
 				tx.Rollback()
@@ -119,7 +118,8 @@ func (uc Usecase) CreateService(ctx context.Context, request CreateServiceReques
 
 // UpdateService updates an existing service with its areas and included items
 func (uc Usecase) UpdateService(ctx context.Context, request UpdateServiceRequest) (ServiceDetailResponse, error) {
-	userLogin, err := uc.GetUserLogin(ctx)
+	var userLogin = dto.SessionDataUser{}
+	err := uc.Security.GetSessionLogin(ctx, &userLogin)
 	if err != nil {
 		return ServiceDetailResponse{}, err
 	}
@@ -151,7 +151,7 @@ func (uc Usecase) UpdateService(ctx context.Context, request UpdateServiceReques
 	existingService.Duration = request.Duration
 	existingService.Price = request.Price
 	existingService.Commission = request.Commission
-	existingService.SetUpdated(userLogin.GetEmail())
+	existingService.SetUpdated(userLogin.Email)
 
 	serviceRepo := db.NewGenericeRepo(tx, domain.Service{})
 	err = serviceRepo.Update(ctx, existingService)
@@ -174,7 +174,7 @@ func (uc Usecase) UpdateService(ctx context.Context, request UpdateServiceReques
 				ServiceID: request.ID,
 				CityID:    cityID,
 			}
-			area.SetCreated(userLogin.GetEmail())
+			area.SetCreated(userLogin.Email)
 			_, err = serviceAreaRepo.Store(ctx, area)
 			if err != nil {
 				tx.Rollback()
@@ -197,7 +197,7 @@ func (uc Usecase) UpdateService(ctx context.Context, request UpdateServiceReques
 				ServiceID: request.ID,
 				Name:      itemName,
 			}
-			item.SetCreated(userLogin.GetEmail())
+			item.SetCreated(userLogin.Email)
 			_, err = includedItemRepo.Store(ctx, item)
 			if err != nil {
 				tx.Rollback()

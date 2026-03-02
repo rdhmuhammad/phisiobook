@@ -1,23 +1,24 @@
 package controller
 
 import (
-	"base-be-golang/internal/constant"
-	"base-be-golang/internal/core/port"
-	"base-be-golang/internal/core/usecase/caching_chat"
-	"base-be-golang/pkg/dto"
-	"base-be-golang/pkg/mongodb"
 	"context"
+	"github.com/rdhmuhammad/phisiobook/internal/constant"
+	"github.com/rdhmuhammad/phisiobook/internal/core/usecase/caching_chat"
+	"github.com/rdhmuhammad/phisiobook/pkg/mongodb"
+	"github.com/rdhmuhammad/phisiobook/shared/base"
+	dto "github.com/rdhmuhammad/phisiobook/shared/payload"
+
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ChatController struct {
-	BaseController
+	base.BaseController
 	cachedUc CachedChatUsecase
 }
 
-func NewChatController(mongoConn *mongodb.Conn, controller BaseController, port port.Port) ChatController {
+func NewChatController(mongoConn *mongodb.Conn, controller base.BaseController, port base.Port) ChatController {
 	return ChatController{
 		cachedUc:       caching_chat.NewUsecase(mongoConn, port),
 		BaseController: controller,
@@ -34,20 +35,20 @@ func (ctrl ChatController) GetCached(c *gin.Context) {
 	var request = caching_chat.GetCachedRequest{
 		Filter: &dto.GetListQueryNoPeriod{},
 	}
-	if errs := ctrl.enigma.BindQueryToFilter(c, &request); errs != nil {
+	if errs := ctrl.Enigma.BindQueryToFilter(c, &request); errs != nil {
 		c.JSON(http.StatusBadRequest, dto.DefaultErrorInvalidDataWithMessage(errs.Error()))
 		return
 	}
 
 	request.Filter.SetIfEmpty()
 	result, err := ctrl.cachedUc.GetCached(c.Request.Context(), request)
-	ctrl.mapper.NewResponse(c, dto.NewSuccessResponse(result, ""), err)
+	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(result, ""), err)
 }
 
 func (ctrl ChatController) Route(route *gin.RouterGroup) {
 	restRouter := route.Group(
 		"",
-		ctrl.auth.Validate(),
-		ctrl.auth.Authorize(constant.RoleIsUser, constant.RolesIsTerapis))
+		ctrl.Security.Validate(),
+		ctrl.Security.Authorize(constant.RoleIsUser, constant.RolesIsTerapis))
 	restRouter.GET("/history", ctrl.GetCached)
 }

@@ -1,9 +1,9 @@
 package localerror
 
 import (
-	"base-be-golang/internal/constant"
-	"base-be-golang/pkg/logger"
 	"errors"
+	"github.com/rdhmuhammad/phisiobook/internal/constant"
+	"github.com/rdhmuhammad/phisiobook/pkg/logger"
 
 	"gorm.io/gorm"
 )

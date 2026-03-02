@@ -3,7 +3,6 @@
 package middleware
 
 import (
-	"base-be-golang/internal/constant"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -12,6 +11,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	translations_en "github.com/go-playground/validator/v10/translations/en"
 	"github.com/google/uuid"
+	"github.com/rdhmuhammad/phisiobook/internal/constant"
 	"mime/multipart"
 
 	"regexp"

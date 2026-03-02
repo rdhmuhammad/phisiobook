@@ -1,9 +1,9 @@
 package db
 
 import (
-	"base-be-golang/pkg/logger"
 	"context"
 	"fmt"
+	"github.com/rdhmuhammad/phisiobook/pkg/logger"
 	"reflect"
 
 	"gorm.io/gorm"

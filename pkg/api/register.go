@@ -1,10 +1,8 @@
 package api
 
 import (
-	"base-be-golang/internal/adapter/controller"
-	"base-be-golang/internal/adapter/socket"
-	"base-be-golang/internal/core/port"
-	"base-be-golang/pkg/mongodb"
+	"github.com/rdhmuhammad/phisiobook/pkg/mongodb"
+	"github.com/rdhmuhammad/phisiobook/shared/base"
 
 	"gorm.io/gorm"
 )
@@ -14,13 +12,13 @@ type Conns struct {
 	MongoDb *mongodb.Conn
 }
 
-func (a *Api) RegisterSocket(r func(conns Conns, port port.Port, sct socket.BaseSocket) []Namespace) {
+func (a *Api) RegisterSocket(r func(conns Conns, port base.Port, sct base.BaseSocket) []Namespace) {
 	namespaces := r(Conns{
 		Db:      a.db,
 		MongoDb: a.mongoConn,
 	},
-		port.NewPort(a.db, a.cache, a.minioStr, a.reZero),
-		socket.NewBaseSocket(a.cache, a.db),
+		base.NewPort(a.db, a.cache, a.minioStr, a.reZero),
+		base.NewBaseSocket(a.cache, a.db),
 	)
 
 	for _, namespace := range namespaces {
@@ -29,13 +27,13 @@ func (a *Api) RegisterSocket(r func(conns Conns, port port.Port, sct socket.Base
 
 }
 
-func (a *Api) Register(r func(conns Conns, port port.Port, controller controller.BaseController) []Router) {
+func (a *Api) Register(r func(conns Conns, port base.Port, controller base.BaseController) []Router) {
 	routers := r(Conns{
 		Db:      a.db,
 		MongoDb: a.mongoConn,
 	},
-		port.NewPort(a.db, a.cache, a.minioStr, a.reZero),
-		controller.NewBaseController(a.cache, a.db),
+		base.NewPort(a.db, a.cache, a.minioStr, a.reZero),
+		base.NewBaseController(a.db, a.cache),
 	)
 
 	for _, router := range routers {

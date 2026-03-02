@@ -14,6 +14,10 @@ type BaseEntity struct {
 	UpdatedBy string    `gorm:"column:updated_by;type:varchar(100)" json:"updatedBy"`
 }
 
+func (receiver *BaseEntity) SetID(id uint) {
+	receiver.ID = id
+}
+
 func (receiver *BaseEntity) SetCreated(actor string) {
 	if actor != "" {
 		receiver.CreatedBy = actor

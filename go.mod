@@ -1,4 +1,4 @@
-module base-be-golang
+module github.com/rdhmuhammad/phisiobook
 
 go 1.24.1
 

@@ -1,10 +1,11 @@
 package controller
 
 import (
-	"base-be-golang/internal/core/port"
-	"base-be-golang/internal/core/usecase/homepage"
-	"base-be-golang/pkg/dto"
 	"context"
+	"github.com/rdhmuhammad/phisiobook/internal/core/usecase/homepage"
+	"github.com/rdhmuhammad/phisiobook/shared/base"
+	dto "github.com/rdhmuhammad/phisiobook/shared/payload"
+
 	"net/http"
 	"strconv"
 
@@ -13,7 +14,7 @@ import (
 )
 
 type HomepageController struct {
-	BaseController
+	base.BaseController
 	uc HomepageUsecase
 }
 
@@ -23,7 +24,7 @@ type HomepageUsecase interface {
 	GetTherapist(ctx context.Context, cityId uint) ([]homepage.TherapistDropdownResponse, error)
 }
 
-func NewHomepageController(dbConn *gorm.DB, controller BaseController, port port.Port) HomepageController {
+func NewHomepageController(dbConn *gorm.DB, controller base.BaseController, port base.Port) HomepageController {
 	return HomepageController{
 		BaseController: controller,
 		uc:             homepage.New(dbConn, port),
@@ -32,7 +33,7 @@ func NewHomepageController(dbConn *gorm.DB, controller BaseController, port port
 
 func (ctrl HomepageController) GetSummaryHome(c *gin.Context) {
 	res, err := ctrl.uc.GetSummaryHome(c.Request.Context())
-	ctrl.mapper.NewResponse(c, dto.NewSuccessResponse(res, "Success"), err)
+	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(res, "Success"), err)
 }
 
 func (ctrl HomepageController) GetTherapistDropdown(c *gin.Context) {
@@ -43,12 +44,12 @@ func (ctrl HomepageController) GetTherapistDropdown(c *gin.Context) {
 	}
 
 	res, err := ctrl.uc.GetTherapist(c.Request.Context(), uint(cityId))
-	ctrl.mapper.NewResponse(c, dto.NewSuccessResponse(res, "Success"), err)
+	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(res, "Success"), err)
 }
 
 func (ctrl HomepageController) GetCityDropdown(c *gin.Context) {
 	res, err := ctrl.uc.GetCityDropdown(c.Request.Context())
-	ctrl.mapper.NewResponse(c, dto.NewSuccessResponse(res, "Success"), err)
+	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(res, "Success"), err)
 }
 
 func (router HomepageController) Route(routes *gin.RouterGroup) {

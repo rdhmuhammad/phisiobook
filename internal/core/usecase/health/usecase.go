@@ -1,18 +1,18 @@
 package health
 
 import (
-	"base-be-golang/internal/core/port"
 	"context"
+	"github.com/rdhmuhammad/phisiobook/shared/base"
 
 	"gorm.io/gorm"
 )
 
 type Usecase struct {
-	port.Port
+	base.Port
 	dbGorm *gorm.DB
 }
 
-func New(dbConn *gorm.DB, prt port.Port) Usecase {
+func New(dbConn *gorm.DB, prt base.Port) Usecase {
 	return Usecase{
 		Port:   prt,
 		dbGorm: dbConn,
