@@ -21,6 +21,58 @@ type PaginatedResult[T any] struct {
 	TotalPages int64 // Total number of pages
 }
 
+type filterDefine struct {
+	column string
+	val    any
+}
+
+// filter
+var (
+	In = func(col string, val any) filterDefine {
+		return filterDefine{
+			column: col,
+			val:    bson.M{"$in": val},
+		}
+	}
+
+	Eq = func(col string, val any) filterDefine {
+		return filterDefine{column: col, val: val}
+	}
+
+	Query = func(val ...filterDefine) map[string]any {
+		var result = make(map[string]any)
+		for _, v := range val {
+			result[v.column] = v.val
+		}
+
+		return result
+	}
+)
+
+type orderDefine struct {
+	column string
+	val    int
+}
+
+var (
+	ASC = func(col string) orderDefine {
+		return orderDefine{column: col, val: 1}
+	}
+
+	DESC = func(col string) orderDefine {
+		return orderDefine{column: col, val: -1}
+	}
+
+	Order = func(order ...orderDefine) *options.FindOptionsBuilder {
+		d := make([]bson.E, len(order))
+		for i, v := range order {
+			d[i] = bson.E{Key: v.column, Value: v.val}
+		}
+		return options.Find().
+			SetSort(d)
+	}
+)
+
 type BaseRepo[T BaseEntity] struct {
 	collection *mongo.Collection
 	entity     T
@@ -41,6 +93,27 @@ func (r *BaseRepo[T]) Store(ctx context.Context, entity BaseEntity) (*mongo.Inse
 	}
 
 	return result, nil
+}
+
+func (r *BaseRepo[T]) BulkUpdate(ctx context.Context, e []T) error {
+	if len(e) == 0 {
+		return nil
+	}
+
+	models := make([]mongo.WriteModel, 0, len(e))
+	for _, entity := range e {
+		model := mongo.NewUpdateOneModel().
+			SetFilter(bson.M{"_id": entity.GetID()}).
+			SetUpdate(bson.M{"$set": entity})
+		models = append(models, model)
+	}
+
+	_, err := r.collection.BulkWrite(ctx, models, options.BulkWrite().SetOrdered(false))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *BaseRepo[T]) Update(ctx context.Context, e BaseEntity) (*mongo.UpdateResult, error) {
@@ -181,10 +254,14 @@ func (r *BaseRepo[T]) FindAll(ctx context.Context, key string, val string) ([]T,
 	return r.findAll(ctx, filter, cachedResult)
 }
 
-func (r *BaseRepo[T]) FindAllByFilter(ctx context.Context, filter map[string]any) ([]T, error) {
+func (r *BaseRepo[T]) FindAllByFilter(
+	ctx context.Context,
+	filter map[string]any,
+	ops ...options.Lister[options.FindOptions],
+) ([]T, error) {
 	var cachedResult = make([]T, 0)
 	bsonFilter := bson.M(filter)
-	return r.findAll(ctx, bsonFilter, cachedResult)
+	return r.findAll(ctx, bsonFilter, cachedResult, ops...)
 }
 
 func (r *BaseRepo[T]) FindAllByFilterPaged(ctx context.Context, filter map[string]any, pagination PaginationQuery) (*PaginatedResult[T], error) {
@@ -248,8 +325,13 @@ func (r *BaseRepo[T]) FindAllContain(ctx context.Context, key string, val string
 	return r.findAll(ctx, filter, cachedResult)
 }
 
-func (r *BaseRepo[T]) findAll(ctx context.Context, filter interface{}, cachedResult []T) ([]T, error) {
-	cursor, err := r.collection.Find(ctx, filter)
+func (r *BaseRepo[T]) findAll(
+	ctx context.Context,
+	filter interface{},
+	cachedResult []T,
+	ops ...options.Lister[options.FindOptions],
+) ([]T, error) {
+	cursor, err := r.collection.Find(ctx, filter, ops...)
 	if err != nil {
 		return nil, err
 	}

@@ -36,7 +36,7 @@ func main() {
 			iam.NewAuthController(conn.Db, port, ctrl),
 			controller.NewHealthController(conn.Db, ctrl, port),
 			iam.NewUserManagementController(conn.Db, port, ctrl),
-			controller.NewChatController(conn.MongoDb, ctrl, port),
+			controller.NewChatController(conn.Db, conn.MongoDb, ctrl, port),
 		}
 	})
 

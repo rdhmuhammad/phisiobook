@@ -47,4 +47,7 @@ var (
 
 	// Booking
 	UpdateStatusBooking = "UpdateStatusBooking"
+
+	//Chat
+	GetChatList = "GetChatList"
 )

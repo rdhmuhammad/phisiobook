@@ -5,8 +5,9 @@ package clock
 import (
 	"context"
 	"fmt"
-	"github.com/rdhmuhammad/phisiobook/internal/constant"
 	"time"
+
+	"github.com/rdhmuhammad/phisiobook/internal/constant"
 )
 
 type CLOCK struct {

@@ -2,11 +2,13 @@ package controller
 
 import (
 	"context"
+
 	"github.com/rdhmuhammad/phisiobook/internal/constant"
 	"github.com/rdhmuhammad/phisiobook/internal/core/usecase/caching_chat"
 	"github.com/rdhmuhammad/phisiobook/pkg/mongodb"
 	"github.com/rdhmuhammad/phisiobook/shared/base"
 	dto "github.com/rdhmuhammad/phisiobook/shared/payload"
+	"gorm.io/gorm"
 
 	"net/http"
 
@@ -18,9 +20,9 @@ type ChatController struct {
 	cachedUc CachedChatUsecase
 }
 
-func NewChatController(mongoConn *mongodb.Conn, controller base.BaseController, port base.Port) ChatController {
+func NewChatController(dbConn *gorm.DB, mongoConn *mongodb.Conn, controller base.BaseController, port base.Port) ChatController {
 	return ChatController{
-		cachedUc:       caching_chat.NewUsecase(mongoConn, port),
+		cachedUc:       caching_chat.NewUsecase(dbConn, mongoConn, port),
 		BaseController: controller,
 	}
 }
@@ -29,6 +31,7 @@ type CachedChatUsecase interface {
 	CacheChat(ctx context.Context, request caching_chat.CacheChatRequest)
 	CacheRoom(ctx context.Context, request caching_chat.CacheRoomRequest, cancle context.CancelFunc) (caching_chat.CacheRoomResponse, error)
 	GetCached(ctx context.Context, request caching_chat.GetCachedRequest) (dto.PaginationResponse[caching_chat.CachedChat], error)
+	GetChatRoom(ctx context.Context) ([]caching_chat.ChatRoomListResponse, error)
 }
 
 func (ctrl ChatController) GetCached(c *gin.Context) {
@@ -45,10 +48,16 @@ func (ctrl ChatController) GetCached(c *gin.Context) {
 	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(result, ""), err)
 }
 
+func (ctrl ChatController) GetChatRoom(c *gin.Context) {
+	result, err := ctrl.cachedUc.GetChatRoom(c.Request.Context())
+	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(result, constant.GetChatList), err)
+}
+
 func (ctrl ChatController) Route(route *gin.RouterGroup) {
 	restRouter := route.Group(
-		"",
+		"/chat",
 		ctrl.Security.Validate(),
 		ctrl.Security.Authorize(constant.RoleIsUser, constant.RolesIsTerapis))
 	restRouter.GET("/history", ctrl.GetCached)
+	restRouter.GET("/room", ctrl.GetChatRoom)
 }

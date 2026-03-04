@@ -224,21 +224,25 @@ type Idempotent interface {
 // ======================== BASE CONTROLLER ====================
 
 type BaseSocket struct {
-	Security Security
-	Enigma   Validator
-	Mapper   Mapper
-	Idem     Idempotent
-	Locale   Locale
-	Env      Environment
+	Security   Security
+	Enigma     Validator
+	Mapper     Mapper
+	Clock      Clock
+	ErrHandler ErrHandler
+	Idem       Idempotent
+	Locale     Locale
+	Env        Environment
 }
 
-func NewBaseSocket(dbCache cache.DbClient, dbConn *gorm.DB) BaseSocket {
+func NewBaseSocket(dbCache cache.DbClient, dbConn *gorm.DB, zero *logger.ReZero) BaseSocket {
 	return BaseSocket{
-		Security: md.NewAuth(dbConn, dbCache),
-		Enigma:   middleware.NewEnigma(),
-		Locale:   localize.NewLanguage("/resource/message"),
-		Mapper:   mapper.NewMapper(),
-		Env:      environment.NewEnvironment(),
-		Idem:     middleware.NewIdempotent(dbCache),
+		Security:   md.NewAuth(dbConn, dbCache),
+		Enigma:     middleware.NewEnigma(),
+		ErrHandler: localerror.NewHandlerError(zero),
+		Clock:      clock.Default(),
+		Locale:     localize.NewLanguage("/resource/message"),
+		Mapper:     mapper.NewMapper(),
+		Env:        environment.NewEnvironment(),
+		Idem:       middleware.NewIdempotent(dbCache),
 	}
 }

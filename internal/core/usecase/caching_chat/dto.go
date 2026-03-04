@@ -1,8 +1,19 @@
 package caching_chat
 
 import (
+	"time"
+
 	"github.com/rdhmuhammad/phisiobook/shared/payload"
 )
+
+type ChatRoomListResponse struct {
+	RoomID         string `json:"roomId"`
+	UserRefID      string `json:"userRefId"`
+	LatestMessage  string `json:"latestMessage"`
+	NotifCount     int    `json:"notifCount"`
+	ProfilePicture string `json:"profilePicture"`
+	Name           string `json:"name"`
+}
 
 type CachedChat struct {
 	ToID    string `json:"to_id"`
@@ -26,10 +37,12 @@ type CacheRoomResponse struct {
 }
 
 type CacheChatRequest struct {
-	From    string `json:"from"`
-	To      string `json:"to"`
-	Message string `json:"message"`
-	RoomID  string `json:"roomId"`
+	From    string    `json:"from"`
+	Read    bool      `json:"read"`
+	ReadAt  time.Time `json:"readAt"`
+	To      string    `json:"to"`
+	Message string    `json:"message"`
+	RoomID  string    `json:"roomId"`
 }
 
 type GetCachedRequest struct {

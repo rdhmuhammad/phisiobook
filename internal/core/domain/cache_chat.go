@@ -1,13 +1,20 @@
 package domain
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type CacheChat struct {
-	ID      primitive.ObjectID `bson:"_id,omitempty"`
-	FromID  string             `bson:"from_id" json:"from_id"`
-	ToID    string             `bson:"to_id" json:"to_id"`
-	Message string             `bson:"message" json:"message"`
-	RoomID  string             `bson:"room_id" json:"room_id"`
+	ID        primitive.ObjectID `bson:"_id,omitempty"`
+	CreatedAt time.Time          `bson:"created_at,omitempty" json:"created_at"`
+	FromID    string             `bson:"from_id" json:"from_id"`
+	Read      bool               `bson:"read" json:"read"`
+	ReadAt    time.Time          `bson:"read_at" json:"read_at"`
+	ToID      string             `bson:"to_id" json:"to_id"`
+	Message   string             `bson:"message" json:"message"`
+	RoomID    string             `bson:"room_id" json:"room_id"`
 }
 
 func (receiver CacheChat) GetID() primitive.ObjectID {

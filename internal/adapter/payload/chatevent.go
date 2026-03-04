@@ -1,6 +1,8 @@
 //go:generate stringer -type=ChatEvent
 package payload
 
+import "time"
+
 type ChatEvent int
 
 const (
@@ -21,4 +23,9 @@ type ChatMessage struct {
 
 func (ctrl *ChatMessage) From(arg ...any) {
 
+}
+
+type AckPayload struct {
+	Ack  bool      `json:"ack"`
+	Time time.Time `json:"time"`
 }

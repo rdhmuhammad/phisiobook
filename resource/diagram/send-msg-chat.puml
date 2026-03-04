@@ -10,8 +10,13 @@ end box
 collections mongoDb
 
 client ->> server : on ev=message
-server -> room : broadcast to room
-& room -> mongoDb : cache message
+server -> server : FetchSockets
+server -> room : broadcast to socket
 room -->> server
-server ->> bclient : emit ev=message
+server ->> bclient : emit ev=message with ack
+alt ack immediately < 1 second
+    bclient -> server : ack
+    & room -> mongoDb : cache message
+else client already disconnect
+
 @enduml
