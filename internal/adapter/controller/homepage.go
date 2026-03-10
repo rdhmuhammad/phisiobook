@@ -1,7 +1,10 @@
+//go:generate go run ../../../apitest_module/shared/runner.go
+
 package controller
 
 import (
 	"context"
+
 	"github.com/rdhmuhammad/phisiobook/internal/core/usecase/homepage"
 	"github.com/rdhmuhammad/phisiobook/shared/base"
 	dto "github.com/rdhmuhammad/phisiobook/shared/payload"

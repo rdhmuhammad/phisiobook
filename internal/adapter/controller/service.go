@@ -1,3 +1,5 @@
+//go:generate go run ../../../apitest_module/shared/runner.go
+
 package controller
 
 import (
@@ -106,16 +108,16 @@ func (ctrl ServiceController) GetCategories(c *gin.Context) {
 
 func (ctrl ServiceController) Route(router *gin.RouterGroup) {
 	serviceGroup := router.Group("/service")
-	{
-		// All routes require admin authentication
-		serviceGroup.Use(ctrl.Security.Validate(), ctrl.Security.Authorize(constant.RoleIsAdmin))
 
-		// CRUD endpoints
-		serviceGroup.POST("", ctrl.CreateService)
-		serviceGroup.GET("", ctrl.GetServiceList)
-		serviceGroup.GET("/categories", ctrl.GetCategories)
-		serviceGroup.GET("/:serviceId", ctrl.GetServiceDetail)
-		serviceGroup.PUT("/:serviceId", ctrl.UpdateService)
-		serviceGroup.DELETE("/:serviceId", ctrl.DeleteService)
-	}
+	// All routes require admin authentication
+	serviceGroup.Use(ctrl.Security.Validate(), ctrl.Security.Authorize(constant.RoleIsAdmin))
+
+	// CRUD endpoints
+	serviceGroup.POST("", ctrl.CreateService)
+	serviceGroup.GET("", ctrl.GetServiceList)
+	serviceGroup.GET("/categories", ctrl.GetCategories)
+	serviceGroup.GET("/:serviceId", ctrl.GetServiceDetail)
+	serviceGroup.PUT("/:serviceId", ctrl.UpdateService)
+	serviceGroup.DELETE("/:serviceId", ctrl.DeleteService)
+
 }

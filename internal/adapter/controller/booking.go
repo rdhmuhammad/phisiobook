@@ -1,3 +1,5 @@
+//go:generate go run ../../../apitest_module/shared/runner.go
+
 package controller
 
 import (
