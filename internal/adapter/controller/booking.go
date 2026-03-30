@@ -81,16 +81,17 @@ func (ctrl BookingController) CreateBooking(c *gin.Context) {
 }
 
 func (r BookingController) Route(routeGr *gin.RouterGroup) {
-	booking := routeGr.Group("/booking")
+	bookingRouter := routeGr.Group("/bookingRouter")
 
-	booking.POST("/create",
+	bookingRouter.POST("/create",
 		r.Security.Validate(),
 		r.Security.Authorize(constant.RoleIsUser),
 		r.Idem.Idempotent(
-			"/booking/create",
+			"/bookingRouter/create",
 			"username",
 			time.Millisecond*2,
 		),
+		r.CreateBooking,
 	)
 
 }

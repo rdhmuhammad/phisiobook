@@ -3,3 +3,4 @@
 .env.stag
 .claude
 log
+apitest_gui/node_modules
