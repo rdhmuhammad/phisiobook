@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/rdhmuhammad/phisiobook/shared/payload"
 
-	"github.com/rdhmuhammad/phisiobook/iam_module/internal/core/constant"
-	"github.com/rdhmuhammad/phisiobook/iam_module/internal/core/domain"
 	"gorm.io/gorm"
+	"iam_module/internal/core/constant"
+	"iam_module/internal/core/domain"
 )
 
 type userRepo struct {

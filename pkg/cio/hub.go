@@ -1,8 +1,9 @@
 package cio
 
 import (
-	"github.com/rdhmuhammad/phisiobook/pkg/localerror"
 	"time"
+
+	"github.com/rdhmuhammad/phisiobook/pkg/localerror"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zishang520/socket.io/servers/socket/v3"
@@ -27,10 +28,12 @@ func New(server *gin.Engine) *IO {
 		Credentials: true,
 	})
 
-	sc := socket.NewServer(server, config)
+	httpServer := types.NewWebServer(server)
+	sc := socket.NewServer(httpServer, config)
 
 	return &IO{
 		socket: sc,
+		ns:     make(map[string]*NS),
 	}
 }
 
@@ -65,8 +68,9 @@ type NSInitiate func(name string, md types.EventListener) *NS
 
 func newNS(hub *IO, ns socket.Namespace) *NS {
 	return &NS{
-		Space: ns,
-		hub:   hub,
+		Space:   ns,
+		hub:     hub,
+		onEvent: make(map[string]func(n *NS, client *socket.Socket, msg ...any)),
 	}
 }
 

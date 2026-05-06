@@ -1,0 +1,71 @@
+services:
+  minio:
+    container_name: "phisiobook-minio"
+    image: minio/minio:latest
+    restart: always
+    env_file:
+      - ./.env.services
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ../resource/docker/minio/data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - backend
+
+  minio-init:
+    container_name: "phisiobook-minio-init"
+    image: minio/mc:latest
+    restart: "no"
+    depends_on:
+      - minio
+    env_file:
+      - ./.env.services
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        until /usr/bin/mc alias set phisiobook http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"; do
+          echo "waiting for minio..."
+          sleep 2
+        done
+        /usr/bin/mc mb -p phisiobook/"$$MINIO_BUCKET" || true
+        /usr/bin/mc anonymous set private phisiobook/"$$MINIO_BUCKET" || true
+    networks:
+      - backend
+
+  mongodb:
+    container_name: "phisiobook-mongodb"
+    image: mongo:8.0
+    restart: always
+    env_file:
+      - ./.env.services
+    ports:
+      - "27017:27017"
+    volumes:
+      - ../resource/docker/mongodb/data:/data/db
+    command:
+      - --auth
+    networks:
+      - backend
+
+  redis:
+    container_name: "phisiobook-redis"
+    image: redis:7.4-alpine
+    restart: always
+    env_file:
+      - ./.env.services
+    ports:
+      - "6379:6379"
+    volumes:
+      - ../resource/docker/redis/data:/data
+    command:
+      - /bin/sh
+      - -c
+      - redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"
+    networks:
+      - backend
+
+networks:
+  backend:

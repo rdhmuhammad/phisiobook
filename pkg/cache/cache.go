@@ -3,23 +3,17 @@ package cache
 import (
 	"context"
 	"fmt"
-	"github.com/redis/go-redis/v9"
 	"os"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type DbClient struct {
 	client *redis.Client
 }
 
-type Cache interface {
-	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error
-	SetNX(ctx context.Context, key string, value interface{}, expiration time.Duration) error
-	Get(ctx context.Context, key string) (string, error)
-	Delete(ctx context.Context, keys ...string) error
-}
-
-func Default() Cache {
+func Default() DbClient {
 	password := os.Getenv("REDIS_PASSWORD")
 	host := os.Getenv("REDIS_HOST")
 	newClient := redis.NewClient(&redis.Options{
@@ -32,7 +26,7 @@ func Default() Cache {
 		fmt.Println(err)
 	}
 	fmt.Println("redis start... ", pong)
-	return &DbClient{
+	return DbClient{
 		client: newClient,
 	}
 }

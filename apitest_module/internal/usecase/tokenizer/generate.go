@@ -101,13 +101,38 @@ func buildAPIDocs(tokenize *Tokenizer, collectionName, baseURL, outPath string) 
 
 	for _, g := range tokenize.groups {
 		folder := CollectionItem{
-			Name: folderName(g),
+			FunIden: g.VarName,
+			Name:    folderName(g),
+		}
+		for _, item := range docs.Item {
+			if item.FunIden == g.VarName {
+				folder = item
+				break
+			}
+		}
+
+		var newItem []CollectionItem
+		var storedItem = make(map[string]bool)
+		for _, item := range folder.Item {
+			r, ok := tokenize.getRouter(folder.FunIden, item.FunIden)
+			if ok {
+				colItem := buildItem(g, r)
+				storedItem[r.handlerFunc] = true
+				newItem = append(newItem, colItem)
+			} else {
+				newItem = append(newItem, item)
+			}
 		}
 
 		for _, r := range g.routers {
-			folder.Item = append(folder.Item, buildItem(g, r))
+			if storedItem[r.handlerFunc] {
+				continue
+			}
+			colItem := buildItem(g, r)
+			newItem = append(newItem, colItem)
 		}
 
+		folder.Item = newItem
 		if len(folder.Item) > 0 {
 			docs.Item = append(docs.Item, folder)
 		}
@@ -152,6 +177,10 @@ func buildItem(g group, r router) CollectionItem {
 	req := Request{
 		Method: r.method,
 		Header: buildHeaders(r),
+		Body: &RequestBody{
+			Mode: "raw",
+			Raw:  r.requestBodyValue,
+		},
 		URL: RequestURL{
 			Raw:  rawURL,
 			Host: []string{"{{base_url}}"},
@@ -159,11 +188,8 @@ func buildItem(g group, r router) CollectionItem {
 		},
 	}
 
-	if body := buildBody(r); body != nil {
-		req.Body = body
-	}
-
 	return CollectionItem{
+		FunIden:  g.VarName + "." + r.handlerFunc,
 		Name:     itemName(r),
 		Request:  &req,
 		Response: []any{},
@@ -177,51 +203,6 @@ func buildHeaders(r router) []Header {
 	}
 	h = append(h, Header{Key: "Authorization", Value: "Bearer {{token}}"})
 	return h
-}
-
-func buildBody(r router) *RequestBody {
-	logger.Infof("%s, %s", r.path, r.requestBodyValue)
-	if r.requestBodyValue == "" {
-		return nil
-	}
-
-	var schema StructSchema
-	if err := json.Unmarshal([]byte(r.requestBodyValue), &schema); err != nil {
-		return &RequestBody{Mode: "raw", Raw: r.requestBodyValue}
-	}
-
-	example := schemaToExample(schema)
-	raw, err := json.MarshalIndent(example, "", "  ")
-	if err != nil {
-		return &RequestBody{Mode: "raw", Raw: r.requestBodyValue}
-	}
-
-	return &RequestBody{Mode: "raw", Raw: string(raw)}
-}
-
-func schemaToExample(schema StructSchema) map[string]any {
-	result := make(map[string]any, len(schema.Fields))
-	for _, f := range schema.Fields {
-		key := f.JSONName
-		if key == "" {
-			key = f.Name
-		}
-		result[key] = typePlaceholder(f.Type)
-	}
-	return result
-}
-
-func typePlaceholder(t string) any {
-	switch {
-	case strings.Contains(t, "int"):
-		return 0
-	case strings.Contains(t, "float"):
-		return 0.0
-	case strings.Contains(t, "bool"):
-		return false
-	default:
-		return ""
-	}
 }
 
 func folderName(g group) string {

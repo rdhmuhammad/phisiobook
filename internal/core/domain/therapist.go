@@ -11,7 +11,6 @@ type Therapist struct {
 	Rating         float64           `json:"rating"`
 	Price          int               `json:"price"`
 	AuthID         uint              `json:"authId"`
-	Auth           UserAdmin         `gorm:"foreignKey:AuthID" json:"auth"`
 	TherapyID      uint              `json:"therapyId"`
 	TherapyType    MasterTherapyType `gorm:"foreignKey:TherapyID" json:"therapyType"`
 }

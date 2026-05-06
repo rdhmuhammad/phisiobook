@@ -15,6 +15,7 @@ type CollectionInfo struct {
 }
 
 type CollectionItem struct {
+	FunIden     string            `json:"funIden"`
 	Name        string            `json:"name"`
 	Item        []CollectionItem  `json:"item,omitempty"`
 	Request     *Request          `json:"request,omitempty"`
@@ -25,6 +26,7 @@ type CollectionItem struct {
 }
 
 type Request struct {
+	FunIden     string       `json:"funIden"`
 	Method      string       `json:"method"`
 	Header      []Header     `json:"header"`
 	Body        *RequestBody `json:"body,omitempty"`

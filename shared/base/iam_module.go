@@ -2,14 +2,16 @@ package base
 
 import (
 	"context"
-	"github.com/rdhmuhammad/phisiobook/pkg/cache"
-	"github.com/rdhmuhammad/phisiobook/pkg/logger"
-	"github.com/rdhmuhammad/phisiobook/shared/payload"
 	"os"
 	"strconv"
 
+	"github.com/rdhmuhammad/phisiobook/pkg/cache"
+	"github.com/rdhmuhammad/phisiobook/pkg/logger"
+	"github.com/rdhmuhammad/phisiobook/shared/payload"
+
+	md "iam_module/pkg/middleware"
+
 	"github.com/gin-gonic/gin"
-	md "github.com/rdhmuhammad/github.com/rdhmuhammad/phisiobook/iam-module/pkg/middleware"
 
 	"gorm.io/gorm"
 )

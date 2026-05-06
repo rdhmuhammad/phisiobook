@@ -3,7 +3,6 @@
 package mapper
 
 import (
-	"github.com/rdhmuhammad/phisiobook/pkg/dto"
 	localerror2 "github.com/rdhmuhammad/phisiobook/pkg/localerror"
 	"github.com/rdhmuhammad/phisiobook/pkg/localize"
 	"github.com/rdhmuhammad/phisiobook/shared/payload"

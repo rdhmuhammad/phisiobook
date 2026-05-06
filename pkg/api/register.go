@@ -18,7 +18,7 @@ func (a *Api) RegisterSocket(r func(conns Conns, port base.Port, sct base.BaseSo
 		MongoDb: a.mongoConn,
 	},
 		base.NewPort(a.db, a.cache, a.minioStr, a.reZero),
-		base.NewBaseSocket(a.cache, a.db),
+		base.NewBaseSocket(a.cache, a.db, a.reZero),
 	)
 
 	for _, namespace := range namespaces {

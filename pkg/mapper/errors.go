@@ -3,16 +3,17 @@ package mapper
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"regexp"
+	"strings"
+
 	"github.com/rdhmuhammad/phisiobook/internal/adapter/payload"
 	"github.com/rdhmuhammad/phisiobook/internal/constant"
-	"github.com/rdhmuhammad/phisiobook/pkg/dto"
 	localerror2 "github.com/rdhmuhammad/phisiobook/pkg/localerror"
 	"github.com/rdhmuhammad/phisiobook/pkg/localize"
 	"github.com/rdhmuhammad/phisiobook/pkg/logger"
 	"github.com/rdhmuhammad/phisiobook/pkg/middleware"
-	"net/http"
-	"regexp"
-	"strings"
+	dto "github.com/rdhmuhammad/phisiobook/shared/payload"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-sql-driver/mysql"
@@ -72,12 +73,12 @@ func (m mapper) TranslateSQLErr(mySqlErr *mysql.MySQLError, methodName string) e
 
 }
 
-func (receiver mapper) GetAuthDataFromContext(c *gin.Context) middleware.UserData {
+func (receiver mapper) GetAuthDataFromContext(c *gin.Context) dto.UserData {
 	authDataStr, ok := c.Get("authData")
 	if !ok {
-		return middleware.UserData{}
+		return dto.UserData{}
 	}
-	authData := authDataStr.(middleware.UserData)
+	authData := authDataStr.(dto.UserData)
 	return authData
 }
 

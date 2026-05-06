@@ -3,7 +3,8 @@ package main
 import (
 	"flag"
 
-	iam "github.com/rdhmuhammad/phisiobook/iam_module/shared/adapter/controller"
+	iam "iam_module/shared/adapter/controller"
+
 	"github.com/rdhmuhammad/phisiobook/internal/adapter/controller"
 	"github.com/rdhmuhammad/phisiobook/internal/adapter/socket"
 	"github.com/rdhmuhammad/phisiobook/pkg/api"
@@ -42,7 +43,7 @@ func main() {
 
 	app.RegisterSocket(func(conns api.Conns, port base.Port, sct base.BaseSocket) []api.Namespace {
 		return []api.Namespace{
-			socket.NewChatSocket(conns.MongoDb, sct, port),
+			socket.NewChatSocket(conns.Db, conns.MongoDb, sct, port),
 		}
 	})
 

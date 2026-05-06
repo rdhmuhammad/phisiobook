@@ -8,6 +8,7 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"github.com/rdhmuhammad/phisiobook/shared/payload"
 )
 
 // SentryMiddleware enriches Sentry events with request details and user context
@@ -61,7 +62,7 @@ func SentryMiddleware() gin.HandlerFunc {
 func enrichSentryWithUserData(hub *sentry.Hub, c *gin.Context) {
 	// Try to get user data from Gin context first
 	if authData, exists := c.Get("authData"); exists {
-		if userData, ok := authData.(UserData); ok {
+		if userData, ok := authData.(payload.UserData); ok {
 			hub.ConfigureScope(func(scope *sentry.Scope) {
 				// Set user information
 				scope.SetUser(sentry.User{
@@ -90,8 +91,8 @@ func enrichSentryWithUserData(hub *sentry.Hub, c *gin.Context) {
 
 func getUserFromContext(hub *sentry.Hub, c context.Context) {
 	// Also try to get user data from request context (authCodeContext)
-	if authData := c.Value(AuthCodeContext); authData != nil {
-		if userData, ok := authData.(UserData); ok {
+	if authData := c.Value(payload.AuthCodeContext); authData != nil {
+		if userData, ok := authData.(payload.UserData); ok {
 			hub.ConfigureScope(func(scope *sentry.Scope) {
 				// Set user information
 				scope.SetUser(sentry.User{

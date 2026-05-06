@@ -20,14 +20,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/rdhmuhammad/phisiobook/iam_module/internal/core/constant"
-	"github.com/rdhmuhammad/phisiobook/iam_module/internal/core/domain"
-	constant2 "github.com/rdhmuhammad/phisiobook/iam_module/shared/constant"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/schema"
+	"iam_module/internal/core/constant"
+	"iam_module/internal/core/domain"
+	constant2 "iam_module/shared/constant"
 )
 
 type Auth struct {

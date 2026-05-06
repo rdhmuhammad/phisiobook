@@ -11,6 +11,7 @@ type router struct {
 	handlerFunc      string
 	requestBodyDir   string
 	requestBodyValue string
+	requestBodyType  string
 }
 
 type group struct {

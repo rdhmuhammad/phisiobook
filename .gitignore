@@ -4,3 +4,9 @@
 .claude
 log
 apitest_gui/node_modules
+postman/postman
+postman/.postman
+resource/docker/minio/data/
+resource/docker/mongodb/data/
+resource/docker/redis/data/
+.tmp-reg-tests

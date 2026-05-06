@@ -10,6 +10,7 @@ import (
 	"github.com/rdhmuhammad/phisiobook/pkg/logger"
 	"github.com/rdhmuhammad/phisiobook/pkg/mongodb"
 	"github.com/rdhmuhammad/phisiobook/shared/base"
+	"gorm.io/gorm"
 
 	"time"
 
@@ -21,9 +22,9 @@ type ChatSocket struct {
 	cachedUc controller.CachedChatUsecase
 }
 
-func NewChatSocket(mongoConn *mongodb.Conn, baseSocket base.BaseSocket, prt base.Port) ChatSocket {
+func NewChatSocket(dbConn *gorm.DB, mongoConn *mongodb.Conn, baseSocket base.BaseSocket, prt base.Port) ChatSocket {
 	return ChatSocket{
-		cachedUc:   caching_chat.NewUsecase(mongoConn, prt),
+		cachedUc:   caching_chat.NewUsecase(dbConn, mongoConn, prt),
 		BaseSocket: baseSocket,
 	}
 }

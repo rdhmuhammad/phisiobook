@@ -1,3 +1,3 @@
-module github.com/rdhmuhammad/phisiobook/iam_module
+module iam_module
 
 go 1.23.10

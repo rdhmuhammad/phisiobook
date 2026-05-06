@@ -8,10 +8,11 @@ import (
 	"github.com/rdhmuhammad/phisiobook/shared/base"
 	"github.com/rdhmuhammad/phisiobook/shared/payload"
 
+	"iam_module/internal/core/constant"
+	"iam_module/internal/core/usecase/registration"
+	constant2 "iam_module/shared/constant"
+
 	"github.com/gin-gonic/gin"
-	"github.com/rdhmuhammad/phisiobook/iam_module/internal/core/constant"
-	"github.com/rdhmuhammad/phisiobook/iam_module/internal/core/usecase/registration"
-	constant2 "github.com/rdhmuhammad/phisiobook/iam_module/shared/constant"
 	"gorm.io/gorm"
 )
 

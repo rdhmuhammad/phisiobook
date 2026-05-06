@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rdhmuhammad/phisiobook/pkg/cache"
 	"github.com/rdhmuhammad/phisiobook/shared/payload"
@@ -17,14 +18,14 @@ import (
 )
 
 type IDEMPOTENT struct {
-	cache cache.Cache
+	cache cache.DbClient
 }
 
 func NewIdempotent(
 	defaultCache cache.DbClient,
 ) IDEMPOTENT {
 	return IDEMPOTENT{
-		cache: &defaultCache,
+		cache: defaultCache,
 	}
 }
 

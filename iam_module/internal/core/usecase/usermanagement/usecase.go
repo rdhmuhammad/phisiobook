@@ -9,12 +9,12 @@ import (
 	"github.com/rdhmuhammad/phisiobook/shared/base"
 	"github.com/rdhmuhammad/phisiobook/shared/payload"
 
-	"github.com/rdhmuhammad/phisiobook/iam_module/internal/adapter/repository"
-	"github.com/rdhmuhammad/phisiobook/iam_module/internal/core/constant"
-	"github.com/rdhmuhammad/phisiobook/iam_module/internal/core/domain"
-	constant2 "github.com/rdhmuhammad/phisiobook/iam_module/shared/constant"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"iam_module/internal/adapter/repository"
+	"iam_module/internal/core/constant"
+	"iam_module/internal/core/domain"
+	constant2 "iam_module/shared/constant"
 )
 
 type Usecase struct {

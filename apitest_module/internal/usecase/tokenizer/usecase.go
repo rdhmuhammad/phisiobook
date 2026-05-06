@@ -67,11 +67,9 @@ func Load() *Tokenizer {
 			if !ok {
 				continue
 			}
-
 			parsingRequestBody(fn, &result, rt)
 		}
 	}
-
 	return &result
 }
 

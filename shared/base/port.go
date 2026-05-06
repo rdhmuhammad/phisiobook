@@ -8,8 +8,9 @@ import (
 	"strconv"
 	"time"
 
+	md "iam_module/pkg/middleware"
+
 	"github.com/minio/minio-go/v7"
-	md "github.com/rdhmuhammad/phisiobook/iam_module/pkg/middleware"
 	"github.com/rdhmuhammad/phisiobook/pkg/cache"
 	"github.com/rdhmuhammad/phisiobook/pkg/clock"
 	"github.com/rdhmuhammad/phisiobook/pkg/davinci"
@@ -199,8 +200,9 @@ type BaseController struct {
 func NewBaseController(db *gorm.DB, dbCache cache.DbClient) BaseController {
 	return BaseController{
 		Mapper:   mapper.NewMapper(),
+		Idem:     middleware.NewIdempotent(dbCache),
 		Enigma:   middleware.NewEnigma(),
-		Locale:   localize.NewLanguage("/resource/message"),
+		Locale:   localize.NewLanguage("resource/message"),
 		Security: NewAuth(db, dbCache),
 	}
 }
@@ -240,7 +242,7 @@ func NewBaseSocket(dbCache cache.DbClient, dbConn *gorm.DB, zero *logger.ReZero)
 		Enigma:     middleware.NewEnigma(),
 		ErrHandler: localerror.NewHandlerError(zero),
 		Clock:      clock.Default(),
-		Locale:     localize.NewLanguage("/resource/message"),
+		Locale:     localize.NewLanguage("resource/message"),
 		Mapper:     mapper.NewMapper(),
 		Env:        environment.NewEnvironment(),
 		Idem:       middleware.NewIdempotent(dbCache),

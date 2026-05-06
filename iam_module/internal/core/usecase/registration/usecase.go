@@ -17,14 +17,14 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/rdhmuhammad/phisiobook/iam_module/internal/core/constant"
-	"github.com/rdhmuhammad/phisiobook/iam_module/internal/core/domain"
-	"github.com/rdhmuhammad/phisiobook/iam_module/pkg/security"
-	constant2 "github.com/rdhmuhammad/phisiobook/iam_module/shared/constant"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/schema"
+	"iam_module/internal/core/constant"
+	"iam_module/internal/core/domain"
+	"iam_module/pkg/security"
+	constant2 "iam_module/shared/constant"
 )
 
 type Usecase struct {

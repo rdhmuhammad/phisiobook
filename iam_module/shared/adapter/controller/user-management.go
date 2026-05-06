@@ -2,16 +2,18 @@ package controller
 
 import (
 	"context"
-	"github.com/rdhmuhammad/phisiobook/shared/base"
-	"github.com/rdhmuhammad/phisiobook/shared/payload"
 	"net/http"
 	"strconv"
 
+	"github.com/rdhmuhammad/phisiobook/shared/base"
+	"github.com/rdhmuhammad/phisiobook/shared/payload"
+
+	"iam_module/internal/adapter/repository"
+	"iam_module/internal/core/domain"
+	user_management "iam_module/internal/core/usecase/usermanagement"
+	"iam_module/shared/constant"
+
 	"github.com/gin-gonic/gin"
-	"github.com/rdhmuhammad/phisiobook/iam_module/internal/adapter/repository"
-	"github.com/rdhmuhammad/phisiobook/iam_module/internal/core/domain"
-	user_management "github.com/rdhmuhammad/phisiobook/iam_module/internal/core/usecase/usermanagement"
-	"github.com/rdhmuhammad/phisiobook/iam_module/shared/constant"
 	"gorm.io/gorm"
 )
 
@@ -100,6 +102,5 @@ func (ctrl UserManagementController) GetListUser(c *gin.Context) {
 }
 
 func (ctrl UserManagementController) Route(handler *gin.RouterGroup) {
-	//TODO implement me
-	panic("implement me")
+
 }

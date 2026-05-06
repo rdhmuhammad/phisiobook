@@ -17,13 +17,18 @@ import (
 )
 
 func LoadRequest(tokenize *Tokenizer) {
-	root := "../" // module root
+	gofile := os.Getenv("GOFILE")
+	root, err := findProjectRoot(filepath.Dir(gofile))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "generate: project root not found: %v\n", err)
+		return
+	}
 	for _, g := range tokenize.groups {
 		for _, r := range g.routers {
 			if r.requestBodyDir == "" {
 				continue
 			}
-			schema, err := findStructInAllowedDirs(root, r.requestBodyDir, []string{
+			jsonStr, err := findStructInAllowedDirs(root, r.requestBodyDir, []string{
 				"internal/core/usecase",
 				"shared/payload",
 				"iam_module/internal/core/usecase",
@@ -32,17 +37,11 @@ func LoadRequest(tokenize *Tokenizer) {
 				panic(err)
 			}
 
-			if schema == nil {
+			if jsonStr == "" {
 				continue
 			}
 
-			out, err := json.MarshalIndent(schema, "", "  ")
-			if err != nil {
-				panic(err)
-			}
-
-			r.requestBodyValue = string(out)
-			logger.Infof(r.requestBodyValue)
+			r.requestBodyValue = jsonStr
 			tokenize.editRouter(r)
 		}
 	}
@@ -56,10 +55,10 @@ func splitQualifiedType(full string) (string, string, error) {
 	return parts[0], parts[1], nil
 }
 
-func findStructInAllowedDirs(root, fullType string, allowedDirs []string) (*StructSchema, error) {
+func findStructInAllowedDirs(root, fullType string, allowedDirs []string) (string, error) {
 	pkgName, structName, err := splitQualifiedType(fullType)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	fset := token.NewFileSet()
@@ -69,14 +68,19 @@ func findStructInAllowedDirs(root, fullType string, allowedDirs []string) (*Stru
 
 		schema, err := scanDirRecursive(fset, baseDir, pkgName, structName)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		if schema != nil {
-			return schema, nil
+			obj := buildJSONObject(schema.Fields)
+			out, err := json.MarshalIndent(obj, "", "  ")
+			if err != nil {
+				return "", err
+			}
+			return string(out), nil
 		}
 	}
 
-	return nil, nil
+	return "", nil
 }
 func scanDirRecursive(fset *token.FileSet, dir, pkgName, structName string) (*StructSchema, error) {
 	entries, err := os.ReadDir(dir)
@@ -154,7 +158,7 @@ func findStructInFile(fset *token.FileSet, file *ast.File, path, structName stri
 				File:       path,
 				Fields:     extractFields(fset, structType),
 			}
-
+			logger.Infof("Struct found at %s, %s", path, structName)
 			return schema
 		}
 	}
@@ -197,6 +201,38 @@ func extractFields(fset *token.FileSet, st *ast.StructType) []StructField {
 	}
 
 	return fields
+}
+
+func buildJSONObject(fields []StructField) map[string]interface{} {
+	obj := map[string]interface{}{}
+	for _, f := range fields {
+		if f.JSONName == "" || f.JSONName == "-" {
+			continue
+		}
+		obj[f.JSONName] = defaultValueForType(f.Type)
+	}
+	return obj
+}
+
+func defaultValueForType(t string) interface{} {
+	switch {
+	case t == "string":
+		return ""
+	case t == "bool":
+		return false
+	case strings.HasPrefix(t, "int") || strings.HasPrefix(t, "uint") || t == "byte" || t == "rune":
+		return 0
+	case strings.HasPrefix(t, "float"):
+		return 0.0
+	case strings.HasPrefix(t, "[]"):
+		return []interface{}{}
+	case strings.HasPrefix(t, "map["):
+		return map[string]interface{}{}
+	case strings.HasPrefix(t, "*"):
+		return nil
+	default:
+		return nil
+	}
 }
 
 func isGoFile(name string) bool {
@@ -264,8 +300,4 @@ type StructField struct {
 
 func (e *foundStructError) Error() string {
 	return "struct found"
-}
-
-func foundStruct(schema *StructSchema) error {
-	return &foundStructError{Schema: schema}
 }

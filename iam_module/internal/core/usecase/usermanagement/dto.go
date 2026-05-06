@@ -4,7 +4,7 @@ import (
 	"github.com/rdhmuhammad/phisiobook/shared/payload"
 	"time"
 
-	"github.com/rdhmuhammad/phisiobook/iam_module/internal/core/domain"
+	"iam_module/internal/core/domain"
 )
 
 type UserDetailItem struct {
