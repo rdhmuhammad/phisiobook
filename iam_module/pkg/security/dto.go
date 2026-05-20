@@ -8,7 +8,7 @@ var (
 	CtxKeySession = "auth.middleware"
 	KeyBranchID   = "branchId"
 
-	// Session Check Middleware
+	// Session Check Auth
 	RequestParams   = "request-params"
 	RequestQuery    = "request-query"
 	RequestBodyJSON = "request-body-json"

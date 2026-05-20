@@ -37,16 +37,15 @@ type CacheRoomResponse struct {
 }
 
 type CacheChatRequest struct {
-	From    string    `json:"from"`
+	ActorID string    `json:"actorId"`
 	Read    bool      `json:"read"`
 	ReadAt  time.Time `json:"readAt"`
-	To      string    `json:"to"`
 	Message string    `json:"message"`
 	RoomID  string    `json:"roomId"`
 }
 
 type GetCachedRequest struct {
-	RoomId  string
+	RoomId  string `bindQuery:"dataType=string" json:"roomId"`
 	ActorId string
-	Filter  *payload.GetListQueryNoPeriod
+	Filter  *payload.GetListQueryNoPeriod `bindQuery:"dive=true"`
 }

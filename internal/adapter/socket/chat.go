@@ -2,11 +2,14 @@ package socket
 
 import (
 	"context"
+	"strings"
 
 	"github.com/rdhmuhammad/phisiobook/internal/adapter/controller"
 	"github.com/rdhmuhammad/phisiobook/internal/adapter/payload"
+	"github.com/rdhmuhammad/phisiobook/internal/constant"
 	"github.com/rdhmuhammad/phisiobook/internal/core/usecase/caching_chat"
 	"github.com/rdhmuhammad/phisiobook/pkg/cio"
+	"github.com/rdhmuhammad/phisiobook/pkg/localerror"
 	"github.com/rdhmuhammad/phisiobook/pkg/logger"
 	"github.com/rdhmuhammad/phisiobook/pkg/mongodb"
 	"github.com/rdhmuhammad/phisiobook/shared/base"
@@ -41,20 +44,16 @@ const (
 )
 
 var actCacheEv = map[actionCache]payload.ChatEvent{
-	joining: payload.NotifyOnline,
-	leaving: payload.NotifyOffline,
+	joining: payload.Notify_join,
+	leaving: payload.Notify_leave,
 }
 
 func (ctrl ChatSocket) cacheRoom(io *cio.NS, client *socket.Socket, action actionCache) {
 	userRef := client.Handshake().Query.Query().Get("userRef")
-	roomId := client.Handshake().Query.Query().Get("roomId")
-	keys := client.Rooms().Keys()
-	var targetRoom socket.Room
-	for _, key := range keys {
-		if roomId == string(key) {
-			targetRoom = key
-		}
-	}
+	roomId := strings.TrimSpace(client.Handshake().Query.Query().Get("roomId"))
+	targetRoom := socket.Room(roomId)
+	client.Join(targetRoom)
+
 	newContext, cancle := context.WithDeadline(
 		context.Background(),
 		time.Now().Add(time.Second*time.Duration(ctrl.Env.GetInt("TIMEOUT_IN_SECOND", 5))),
@@ -63,12 +62,13 @@ func (ctrl ChatSocket) cacheRoom(io *cio.NS, client *socket.Socket, action actio
 		newContext,
 		caching_chat.CacheRoomRequest{
 			Actor:       userRef,
-			ActorStatus: true,
+			ActorStatus: action == joining,
 			RoomID:      roomId,
 		},
 		cancle,
 	)
 	if err != nil {
+		logger.Error(err)
 		ctrl.Mapper.ErrorSocket(client, err)
 		return
 	}
@@ -83,12 +83,12 @@ func (ctrl ChatSocket) cacheRoom(io *cio.NS, client *socket.Socket, action actio
 
 		for _, sc := range sockets {
 			if sc.Id() != client.Id() {
-				if result.NewRoom && action == joining {
+				ctrl.ErrHandler.DebugPrint("Client Socket ID => %s", client.Id())
+				ctrl.ErrHandler.DebugPrint("Sc Socket ID => %s", sc.Id())
+				if !result.NewRoom && action == joining {
 					err := sc.
-						Emit(payload.NotifyJoin.String(), payload.ChatMessage{
+						Emit(payload.Notify_join.Topic(), payload.ChatMessage{
 							Message: result.UserFullName + " Join the room",
-							FromID:  result.FromRef,
-							ToID:    result.ToRef,
 						})
 					if err != nil {
 						logger.Error(err)
@@ -99,9 +99,11 @@ func (ctrl ChatSocket) cacheRoom(io *cio.NS, client *socket.Socket, action actio
 				err = sc.
 					Emit(actCacheEv[action].String(), payload.ChatMessage{
 						Message: result.UserFullName + " Join the room",
-						FromID:  result.FromRef,
-						ToID:    result.ToRef,
 					})
+				if err != nil {
+					logger.Error(err)
+				}
+				return
 			}
 		}
 	})
@@ -110,27 +112,39 @@ func (ctrl ChatSocket) cacheRoom(io *cio.NS, client *socket.Socket, action actio
 
 func (ctrl ChatSocket) SendChat(io *cio.NS, client *socket.Socket, message cio.MessagePayload) {
 	sentMsg := message.(*payload.ChatMessage)
+	roomId := strings.TrimSpace(client.Handshake().Query.Query().Get("roomId"))
+	if roomId == "" {
+		ctrl.Mapper.ErrorSocket(client, localerror.InvalidData(constant.RoomNotValid.String()))
+		return
+	}
+
+	userRef := strings.TrimSpace(client.Handshake().Query.Query().Get("userRef"))
+	if userRef == "" {
+		ctrl.Mapper.ErrorSocket(client, localerror.InvalidData(constant.AccessNotAllowed.String()))
+		return
+	}
 	request := caching_chat.CacheChatRequest{
-		From:    sentMsg.FromID,
-		To:      sentMsg.ToID,
+		ActorID: userRef,
 		Message: sentMsg.Message,
-		RoomID:  sentMsg.RoomID,
+		RoomID:  roomId,
 	}
 	tzName := client.Handshake().Query.Query().Get("tz")
 	var tz = time.UTC
-	var err error
 	if tzName != "" {
-		tz, err = time.LoadLocation(tzName)
-		ctrl.ErrHandler.ErrorPrint(err)
+		if t, err := time.LoadLocation(tzName); err != nil {
+			ctrl.ErrHandler.ErrorPrint(err)
+		} else {
+			tz = t
+		}
 	}
 
-	remoteSocket := io.Space.To(socket.Room(sentMsg.RoomID)).FetchSockets()
+	remoteSocket := io.Space.To(socket.Room(roomId)).FetchSockets()
 	remoteSocket(func(sockets []*socket.RemoteSocket, err error) {
 		for _, rs := range sockets {
 			if rs.Id() != client.Id() {
 				ack := io.Space.To(socket.Room(rs.Id())).
 					Timeout(1*time.Second).
-					EmitWithAck(payload.Message.String(), sentMsg)
+					EmitWithAck(payload.Message.Topic(), sentMsg)
 				ack(func(response []any, err error) {
 					if err != nil {
 						request.Read = false
@@ -140,16 +154,16 @@ func (ctrl ChatSocket) SendChat(io *cio.NS, client *socket.Socket, message cio.M
 					request.ReadAt = time.Now().In(tz)
 				})
 
-				go ctrl.cachedUc.CacheChat(context.Background(), request)
 			} else {
 				err := io.Space.To(socket.Room(rs.Id())).
-					Emit(payload.Message.String(), sentMsg)
+					Emit(payload.Message.Topic(), sentMsg)
 				if err != nil {
 					ctrl.Mapper.ErrorSocket(client, err)
 					return
 				}
 			}
 		}
+		go ctrl.cachedUc.CacheChat(context.Background(), request)
 	})
 
 }
@@ -161,7 +175,8 @@ func (ctrl ChatSocket) LeaveRoom(io *cio.NS, client *socket.Socket) {
 func (ctrl ChatSocket) OnSpace(ns cio.NSInitiate) {
 	ns("chat", nil).
 		UserRoom().
+		Auth(ctrl.Security.SocketValidate("token")).
 		Connect(ctrl.JoinRoom).
-		Event(payload.Message.String(), &payload.ChatMessage{}, ctrl.SendChat).
+		Event(payload.Message.Topic(), &payload.ChatMessage{}, ctrl.SendChat).
 		Disconnect(ctrl.LeaveRoom).Build()
 }

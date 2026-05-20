@@ -117,20 +117,20 @@ func (dc Engine) GenerateUniqueKeyWithPredicate(
 	secretKey string,
 	uniqueID string,
 	length int,
-	isUnique UniquePredicate,
+	isExist UniquePredicate,
 ) (string, error) {
 	key, err := dc.GenerateUniqueKey([]byte(secretKey), uniqueID, length)
 	if err != nil {
 		return "", err
 	}
-	if unique, err := isUnique(key); err != nil {
+	if exist, err := isExist(key); err != nil {
 		return "", err
-	} else if unique {
+	} else if !exist {
 		return key, nil
 	}
 
 	return dc.GenerateUniqueKeyWithPredicate(
-		secretKey, uniqueID, length, isUnique)
+		secretKey, uniqueID, length, isExist)
 }
 
 func (dc Engine) GenerateUniqueKey(

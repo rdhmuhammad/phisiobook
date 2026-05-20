@@ -50,7 +50,7 @@ func (ctrl ChatController) GetCached(c *gin.Context) {
 
 func (ctrl ChatController) GetChatRoom(c *gin.Context) {
 	result, err := ctrl.cachedUc.GetChatRoom(c.Request.Context())
-	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(result, constant.GetChatList), err)
+	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(result, constant.GetChatList.String()), err)
 }
 
 func (ctrl ChatController) Route(route *gin.RouterGroup) {

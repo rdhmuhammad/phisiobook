@@ -2,7 +2,6 @@ package user_management
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/rdhmuhammad/phisiobook/pkg/db"
 	"github.com/rdhmuhammad/phisiobook/pkg/localerror"
@@ -195,7 +194,7 @@ func (u Usecase) DeleteAccount(ctx context.Context) error {
 		return err
 	}
 
-	err = u.Cache.Delete(ctx, fmt.Sprintf("%s%s", constant.CacheKeyLogin, userLogin.UserReference))
+	err = u.Cache.Delete(ctx, constant.LoginCacheKey(userLogin.UserReference))
 	if err != nil {
 		return err
 	}

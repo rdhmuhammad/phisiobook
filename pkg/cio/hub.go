@@ -1,6 +1,8 @@
 package cio
 
 import (
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/rdhmuhammad/phisiobook/pkg/localerror"
@@ -28,8 +30,10 @@ func New(server *gin.Engine) *IO {
 		Credentials: true,
 	})
 
-	httpServer := types.NewWebServer(server)
-	sc := socket.NewServer(httpServer, config)
+	sc := socket.NewServer(nil, config)
+	handler := gin.WrapH(sc.ServeHandler(nil))
+	server.Any("/socket.io", handler)
+	server.Any("/socket.io/*any", handler)
 
 	return &IO{
 		socket: sc,
@@ -59,6 +63,7 @@ type NS struct {
 	Space        socket.Namespace
 	useRoom      bool
 	hub          *IO
+	auth         socket.NamespaceMiddleware
 	onConnect    func(n *NS, client *socket.Socket)
 	onDisconnect func(n *NS, client *socket.Socket)
 	onEvent      map[string]func(n *NS, client *socket.Socket, msg ...any)
@@ -100,22 +105,40 @@ func (n *NS) Connect(mds NSListener) *NS {
 	return n
 }
 
+func (n *NS) Auth(mds socket.NamespaceMiddleware) *NS {
+	n.auth = func(s *socket.Socket, f func(*socket.ExtendedError)) {
+		mds(s, f)
+	}
+	return n
+}
+
 func (n *NS) Event(evname string, p MessagePayload, md NSListenerMessage[MessagePayload]) *NS {
+	payloadType := reflect.TypeOf(p)
 	n.onEvent[evname] = func(ns *NS, client *socket.Socket, msg ...any) {
-		p.From(msg...)
-		md(ns, client, p)
+		payload := p
+		if payloadType.Kind() == reflect.Pointer {
+			payload = reflect.New(payloadType.Elem()).Interface().(MessagePayload)
+		}
+
+		payload.From(msg...)
+		md(ns, client, payload)
 	}
 	return n
 }
 
 func (n *NS) Build() {
+	if n.auth != nil {
+		n.Space.Use(n.auth)
+	}
 	n.Space.On("connection", func(a ...any) {
 		client := a[0].(*socket.Socket)
 		query := client.Handshake().Query
 
 		if n.useRoom {
-			roomId := query.Query().Get("roomId")
-			client.Join(socket.Room(roomId))
+			roomId := strings.TrimSpace(query.Query().Get("roomId"))
+			if roomId != "" {
+				client.Join(socket.Room(roomId))
+			}
 
 			if n.onConnect != nil {
 				n.onConnect(n, client)
@@ -123,7 +146,7 @@ func (n *NS) Build() {
 
 			for name, ev := range n.onEvent {
 				client.On(name, func(msg ...any) {
-					ev(n, client, msg)
+					ev(n, client, msg...)
 				})
 			}
 			client.On("disconnect", func(any ...any) {
@@ -139,7 +162,7 @@ func (n *NS) Build() {
 		}
 		for name, ev := range n.onEvent {
 			client.On(name, func(msg ...any) {
-				ev(n, client, msg)
+				ev(n, client, msg...)
 			})
 		}
 		client.On("disconnect", func(any ...any) {

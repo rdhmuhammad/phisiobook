@@ -4,22 +4,22 @@ import (
 	"github.com/rdhmuhammad/phisiobook/internal/constant"
 	"github.com/rdhmuhammad/phisiobook/pkg/localerror"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type RoomSession struct {
-	ID               primitive.ObjectID `bson:"_id,omitempty"`
-	SocketUserID     string             `json:"socket_user_id" bson:"socket_user_id"`
-	UserFullName     string             `json:"user_full_name" bson:"user_full_name"`
-	UserRef          string             `json:"user_ref" bson:"user_ref"`
-	UserIsLive       bool               `json:"user_is_live" bson:"user_is_live"`
-	SocketEmployeeID string             `json:"socket_employee_id" bson:"socket_employee_id"`
-	EmployeeFullName string             `json:"employee_full_name" bson:"employee_full_name"`
-	EmployeeRef      string             `json:"employee_ref" bson:"employee_ref"`
-	EmployeeIsLive   bool               `json:"employee_is_live" bson:"employee_is_live"`
-	BookCode         string             `json:"book_code" bson:"book_code"`
-	IsValid          bool               `json:"is_valid" bson:"is_valid"`
-	RoomIsLive       bool               `json:"room_is_live" bson:"room_is_live"`
+	ID               bson.ObjectID `bson:"_id,omitempty"`
+	SocketUserID     string        `json:"socket_user_id" bson:"socket_user_id"`
+	UserFullName     string        `json:"user_full_name" bson:"user_full_name"`
+	UserRef          string        `json:"user_ref" bson:"user_ref"`
+	UserIsLive       bool          `json:"user_is_live" bson:"user_is_live"`
+	SocketEmployeeID string        `json:"socket_employee_id" bson:"socket_employee_id"`
+	EmployeeFullName string        `json:"employee_full_name" bson:"employee_full_name"`
+	EmployeeRef      string        `json:"employee_ref" bson:"employee_ref"`
+	EmployeeIsLive   bool          `json:"employee_is_live" bson:"employee_is_live"`
+	BookCode         string        `json:"book_code" bson:"book_code"`
+	IsValid          bool          `json:"is_valid" bson:"is_valid"`
+	RoomIsLive       bool          `json:"room_is_live" bson:"room_is_live"`
 }
 
 func (receiver RoomSession) ParticipantSocketIDEqual(roleName string, id string) bool {
@@ -97,7 +97,7 @@ func (receiver *RoomSession) SetParticipantSocketID(role string, id string) erro
 	}
 }
 
-func (receiver RoomSession) GetID() primitive.ObjectID {
+func (receiver RoomSession) GetID() bson.ObjectID {
 	return receiver.ID
 }
 

@@ -49,6 +49,7 @@ func (ctrl AuthController) Login(c *gin.Context, role string) {
 	}
 	request.Role = role
 	result, err := ctrl.uc.Login(c.Request.Context(), request)
+	c.Set(string(constant2.FallBackLangLogin), result.Lang)
 	ctrl.Mapper.NewResponse(c, payload.NewSuccessResponse(result, constant2.LoginSuccess.String()), err)
 }
 

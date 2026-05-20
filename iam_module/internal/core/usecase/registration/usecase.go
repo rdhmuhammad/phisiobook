@@ -2,29 +2,29 @@ package registration
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/rdhmuhammad/phisiobook/pkg/db"
 	"github.com/rdhmuhammad/phisiobook/pkg/localerror"
 	"github.com/rdhmuhammad/phisiobook/pkg/mailing"
 	"github.com/rdhmuhammad/phisiobook/pkg/middleware"
 	"github.com/rdhmuhammad/phisiobook/shared/base"
 	"github.com/rdhmuhammad/phisiobook/shared/payload"
-	"os"
-	"strconv"
-	"strings"
-	"time"
+
+	"iam_module/internal/core/constant"
+	"iam_module/internal/core/domain"
+	"iam_module/pkg/security"
+	constant2 "iam_module/shared/constant"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/schema"
-	"iam_module/internal/core/constant"
-	"iam_module/internal/core/domain"
-	"iam_module/pkg/security"
-	constant2 "iam_module/shared/constant"
 )
 
 type Usecase struct {
@@ -66,7 +66,7 @@ func (u Usecase) Logout(ctx context.Context, role string) error {
 		break
 	}
 
-	err := u.Cache.Delete(ctx, fmt.Sprintf("%s%s", constant.CacheKeyLogin, userSession.UserId))
+	err := u.Cache.Delete(ctx, constant.LoginCacheKey(userSession.UserId))
 	if err != nil {
 		u.ErrHandler.ErrorPrint(err)
 		middleware.CaptureErrorUsecase(ctx, err)
@@ -114,7 +114,6 @@ func (u Usecase) Login(ctx context.Context, request LoginRequest) (LoginResponse
 	case constant.ContextMobile:
 		data, err := u.userRepo.FindOneByExpression(ctx, []clause.Expression{
 			db.Equal(request.Email, "email"),
-			db.Equal(true, "is_verified"),
 		})
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -126,7 +125,7 @@ func (u Usecase) Login(ctx context.Context, request LoginRequest) (LoginResponse
 		userMobile = data
 
 		if !data.GetIsVerified() {
-			return LoginResponse{}, localerror.InvalidData(constant2.LoginUnverified.String())
+			return LoginResponse{Lang: userMobile.Lang}, localerror.InvalidData(constant2.LoginPasswordMismatch.String())
 		}
 		break
 	case constant.ContextDashboard:
@@ -148,7 +147,7 @@ func (u Usecase) Login(ctx context.Context, request LoginRequest) (LoginResponse
 	if rawPas, err := u.Davinci.DecryptMessage([]byte(u.Env.Get("ENCRYPT_MESSAGE_PASSWORD")), user.GetPassword()); err != nil {
 		return LoginResponse{}, err
 	} else if rawPas != request.Password {
-		return LoginResponse{}, localerror.InvalidData(constant2.LoginPasswordMismatch.String())
+		return LoginResponse{Lang: userMobile.Lang}, localerror.InvalidData(constant2.LoginPasswordMismatch.String())
 	}
 
 	userReference, err := u.Davinci.GenerateHash([]byte(u.Env.Get("SECRET_USER_ID")), strconv.FormatUint(uint64(user.GetID()), 10))
@@ -200,18 +199,22 @@ func (u Usecase) Login(ctx context.Context, request LoginRequest) (LoginResponse
 		return LoginResponse{}, err
 	}
 
-	userBytes, err := json.Marshal(user)
-	err = u.Cache.Set(
-		ctx,
-		fmt.Sprintf("%s%s", constant.CacheKeyLogin, userReference),
-		string(userBytes),
-		time.Hour*time.Duration(u.Env.GetInt("EXPIRED_TOKEN_JWT", 1)),
-	)
+	err = u.Security.SetSession(ctx, payload.SessionDataUser{
+		ID:            user.GetID(),
+		UserReference: userReference,
+		RoleName:      userDataToken.RoleName,
+		TimeZone:      userDataToken.Timezone,
+		Lang:          userDataToken.Lang,
+		Email:         user.GetEmail(),
+		Name:          user.GetName(),
+		IsVerified:    user.GetIsVerified(),
+	})
 	if err != nil {
 		middleware.CaptureErrorUsecase(ctx, err)
 	}
 
 	return LoginResponse{
+		Lang:       userMobile.Lang,
 		UserID:     user.GetID(),
 		Email:      user.GetEmail(),
 		Token:      token,

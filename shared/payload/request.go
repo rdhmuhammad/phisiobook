@@ -2,11 +2,7 @@ package payload
 
 import (
 	"fmt"
-	"github.com/rdhmuhammad/phisiobook/internal/constant"
-	"strconv"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 type GetListQueryNoPeriod struct {
@@ -51,97 +47,6 @@ type FilterPeriod struct {
 	PeriodType string    `json:"periodType"`
 }
 
-func NewGetListQueryFromContext(c *gin.Context, rules map[string]any) (GetListQuery, error) {
-	var query = GetListQuery{
-		Search: c.Query("search"),
-		FilterPeriod: FilterPeriod{
-			Month:      c.Query("month"),
-			PeriodType: c.Query("periodType"),
-		},
-	}
-
-	if c.Query("year") != "" {
-		year, err := strconv.ParseInt(c.Query("year"), 10, 64)
-		if err != nil {
-
-			return GetListQuery{}, fmt.Errorf("format year tidak valid")
-		}
-		query.FilterPeriod.Year = int(year)
-	}
-
-	var dateStartParams, timeFormat string
-	if val, ok := rules["dateStartParams"]; ok {
-		dateStartParams = val.(string)
-	}
-
-	if val, ok := rules["timeFormat"]; ok {
-		timeFormat = val.(string)
-	}
-
-	if c.Query(dateStartParams) != "" {
-		dateStart, err := time.Parse(timeFormat, c.Query(dateStartParams))
-		if err != nil {
-
-			return GetListQuery{}, fmt.Errorf("format dateStart tidak valid")
-		}
-		query.FilterPeriod.StartDate = dateStart
-	}
-
-	var endDateParams string
-	if val, ok := rules["endDateParams"]; ok {
-		endDateParams = val.(string)
-	}
-
-	if c.Query(endDateParams) != "" {
-		dateFinish, err := time.Parse(timeFormat, c.Query(endDateParams))
-		if err != nil {
-
-			return GetListQuery{}, fmt.Errorf("format dateFinish tidak valid")
-		}
-		query.FilterPeriod.EndDate = dateFinish
-	}
-
-	if c.Query("perPage") != "" {
-		perPage, err := strconv.ParseInt(c.Query("perPage"), 10, 64)
-		if err != nil {
-
-			return GetListQuery{}, fmt.Errorf("format perPage tidak valid")
-		}
-		query.PerPage = int(perPage)
-	}
-
-	if c.Query("date") != "" {
-		date, err := time.Parse(timeFormat, c.Query("date"))
-		if err != nil {
-
-			return GetListQuery{}, fmt.Errorf("format date tidak valid")
-		}
-		query.Date = date
-	}
-
-	if c.Query("page") != "" {
-		page, err := strconv.ParseInt(c.Query("page"), 10, 64)
-		if err != nil {
-
-			return GetListQuery{}, fmt.Errorf("format page tidak valid")
-		}
-		query.Page = int(page)
-	}
-
-	if (query.FilterPeriod.Month != "" &&
-		(query.FilterPeriod.StartDate != (time.Time{}) ||
-			query.FilterPeriod.EndDate != (time.Time{}))) ||
-		(query.FilterPeriod.Month != "" &&
-			query.FilterPeriod.Year != 0) ||
-		(query.FilterPeriod.Year != 0 &&
-			(query.FilterPeriod.StartDate != (time.Time{}) ||
-				query.FilterPeriod.EndDate != (time.Time{}))) {
-		return GetListQuery{}, constant.ErrQueryPeriod
-	}
-
-	return query, nil
-}
-
 type GetListExpanseQuery struct {
 	GetListQuery
 	CategoryID int    `json:"categoryId"`
@@ -162,39 +67,6 @@ type GetListTransactionQuery struct {
 	JenisTransaksi    string `json:"jenisTransaksi"`
 	TransactionStatus string `json:"transactionStatus"`
 	ActionType        string `json:"actionType"`
-}
-
-func NewGetListTransactionQueryFromContext(c *gin.Context, rules map[string]interface{}) (GetListTransactionQuery, error) {
-	var query = GetListTransactionQuery{
-		Sorting: Sorting{
-			CreatedAt: c.Query("sortCreatedAt"),
-		},
-		PaymentMethod:     c.Query("paymentMethod"),
-		PaymentStatus:     c.Query("paymentStatus"),
-		TransactionStatus: c.Query("transactionStatus"),
-		JenisTransaksi:    c.Query("jenisTransaksi"),
-	}
-
-	if query.Sorting.CreatedAt == "" {
-		query.Sorting.CreatedAt = "DESC"
-	}
-
-	if c.Param("customerId") != "" {
-		custId, err := strconv.ParseUint(c.Param("customerId"), 10, 64)
-		if err != nil {
-
-			return GetListTransactionQuery{}, fmt.Errorf("format customerId tidak valid")
-		}
-		query.CustomerID = uint(custId)
-	}
-
-	baseQuery, err := NewGetListQueryFromContext(c, rules)
-	if err != nil {
-		return GetListTransactionQuery{}, err
-	}
-	query.GetListQuery = baseQuery
-
-	return query, nil
 }
 
 func (t GetListQuery) GetDateRange(tz *time.Location) (time.Time, time.Time) {

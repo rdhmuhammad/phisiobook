@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"fmt"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -102,9 +103,14 @@ func (r *BaseRepo[T]) BulkUpdate(ctx context.Context, e []T) error {
 
 	models := make([]mongo.WriteModel, 0, len(e))
 	for _, entity := range e {
+		update, err := updateSetFromEntity(entity)
+		if err != nil {
+			return err
+		}
+
 		model := mongo.NewUpdateOneModel().
 			SetFilter(bson.M{"_id": entity.GetID()}).
-			SetUpdate(bson.M{"$set": entity})
+			SetUpdate(bson.M{"$set": update})
 		models = append(models, model)
 	}
 
@@ -117,7 +123,12 @@ func (r *BaseRepo[T]) BulkUpdate(ctx context.Context, e []T) error {
 }
 
 func (r *BaseRepo[T]) Update(ctx context.Context, e BaseEntity) (*mongo.UpdateResult, error) {
-	result, err := r.collection.UpdateByID(ctx, e.GetID(), e)
+	update, err := updateSetFromEntity(e)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := r.collection.UpdateByID(ctx, e.GetID(), bson.M{"$set": update})
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +141,12 @@ func (r *BaseRepo[T]) UpdateByCondition(
 	condition map[string]any,
 	e BaseEntity,
 ) (*mongo.UpdateResult, error) {
-	result, err := r.collection.UpdateOne(ctx, condition, e)
+	update, err := updateSetFromEntity(e)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := r.collection.UpdateOne(ctx, condition, bson.M{"$set": update})
 	if err != nil {
 		return nil, err
 	}
@@ -342,4 +358,23 @@ func (r *BaseRepo[T]) findAll(
 	}
 
 	return cachedResult, nil
+}
+
+func updateSetFromEntity(entity any) (bson.M, error) {
+	raw, err := bson.Marshal(entity)
+	if err != nil {
+		return nil, err
+	}
+
+	var update bson.M
+	if err := bson.Unmarshal(raw, &update); err != nil {
+		return nil, err
+	}
+
+	delete(update, "_id")
+	if len(update) == 0 {
+		return nil, fmt.Errorf("empty mongo update document")
+	}
+
+	return update, nil
 }

@@ -20,30 +20,37 @@ import (
 type Usecase struct {
 	base.Port
 	dbTrx          db.DBTransaction
+	cityRepo       db.GenericRepository[domain.MasterCity]
 	statusHistRepo db.GenericRepository[domain.BookingStatusHistory]
 	statusRepo     db.GenericRepository[domain.MasterBookingStatus]
 	bookingRepo    db.GenericRepository[domain.Booking]
-	chatRoomRepo   mongodb.BaseRepo[domain.RoomSession]
+	chatRoomRepo   *mongodb.BaseRepo[domain.RoomSession]
 	therapistRepo  db.GenericRepository[domain.Therapist]
 	settingRepo    db.GenericRepository[domain.Setting]
 	userRepo       db.GenericRepository[domain.UserExtended]
 	userAdminRepo  db.GenericRepository[domain.UserAdminExtended]
 }
 
-func NewUsecase(dbCon *gorm.DB, prt base.Port) Usecase {
+func NewUsecase(dbCon *gorm.DB, mongoConn *mongodb.Conn, prt base.Port) Usecase {
 	return Usecase{
-		statusHistRepo: db.NewGenericeRepo(dbCon, domain.BookingStatusHistory{}),
-		userRepo:       db.NewGenericeRepo(dbCon, domain.UserExtended{}),
-		userAdminRepo:  db.NewGenericeRepo(dbCon, domain.UserAdminExtended{}),
-		bookingRepo:    db.NewGenericeRepo(dbCon, domain.Booking{}),
-		Port:           prt,
-		therapistRepo:  db.NewGenericeRepo(dbCon, domain.Therapist{}),
-		settingRepo:    db.NewGenericeRepo(dbCon, domain.Setting{}),
-		statusRepo:     db.NewGenericeRepo(dbCon, domain.MasterBookingStatus{}),
+		Port: prt,
 		dbTrx: db.NewDBTransaction(dbCon,
+			db.NewGenericeRepoPointr(dbCon, domain.Payment{}),
+			db.NewGenericeRepoPointr(dbCon, domain.PaymentDetail{}),
 			db.NewGenericeRepoPointr(dbCon, domain.Booking{}),
+			db.NewGenericeRepoPointr(dbCon, domain.UserExtended{}),
+			db.NewGenericeRepoPointr(dbCon, domain.UserAdminExtended{}),
 			db.NewGenericeRepoPointr(dbCon, domain.BookingStatusHistory{}),
 		),
+		cityRepo:       db.NewGenericeRepo(dbCon, domain.MasterCity{}),
+		statusHistRepo: db.NewGenericeRepo(dbCon, domain.BookingStatusHistory{}),
+		statusRepo:     db.NewGenericeRepo(dbCon, domain.MasterBookingStatus{}),
+		bookingRepo:    db.NewGenericeRepo(dbCon, domain.Booking{}),
+		chatRoomRepo:   mongodb.NewBaseRepo(mongoConn, domain.RoomSession{}),
+		therapistRepo:  db.NewGenericeRepo(dbCon, domain.Therapist{}),
+		settingRepo:    db.NewGenericeRepo(dbCon, domain.Setting{}),
+		userRepo:       db.NewGenericeRepo(dbCon, domain.UserExtended{}),
+		userAdminRepo:  db.NewGenericeRepo(dbCon, domain.UserAdminExtended{}),
 	}
 }
 
@@ -51,7 +58,7 @@ func (uc Usecase) UpdateStatus(ctx context.Context, request UpdateStatus) (roomI
 	booking, err := uc.bookingRepo.FindOneByExpression(ctx, db.Query(db.Equal(request.Code, "code")))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return roomId, localerror.InvalidData(constant.BookingNotFound)
+			return roomId, localerror.InvalidData(constant.BookingNotFound.String())
 		}
 		return roomId, uc.ErrHandler.ErrorReturn(err)
 	}
@@ -180,16 +187,19 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 		return uc.ErrHandler.ErrorReturn(err)
 	}
 
-	setting, err := uc.settingRepo.FindOneByExpression(ctx, db.Query(db.Equal(true, "status")))
-	if err != nil {
-		return uc.ErrHandler.ErrorReturn(err)
-	}
-
 	// Calculate amounts
 	subTotal := therapist.Price
-	applicationFee := setting.ApplicationFee
-	taxAmount := (float64(subTotal) * setting.TaxPPN) / 100
+	var applicationFee float64
+	var taxAmount float64
 	totalAmount := float64(subTotal) + applicationFee + taxAmount
+
+	if setting, err := uc.settingRepo.FindOneByExpression(ctx, db.Query(db.Equal(true, "status"))); err != nil {
+		uc.ErrHandler.ErrorPrint(err)
+	} else {
+		applicationFee = setting.ApplicationFee
+		taxAmount = (float64(subTotal) * setting.TaxPPN) / 100
+
+	}
 
 	// Create payment
 	payment := domain.Payment{
@@ -293,4 +303,112 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 	}
 
 	return nil
+}
+
+func (uc Usecase) GetAdjustPrice(ctx context.Context, therapistCode string) (AdjustPriceResponse, error) {
+	type therapistSelection struct {
+		Price int `gorm:"column:price" json:"price"`
+	}
+
+	var therapist therapistSelection
+	err := uc.therapistRepo.FindOneByExpSelection(
+		ctx,
+		&therapist,
+		db.Query(db.Equal(therapistCode, "code")),
+	)
+	if err != nil {
+		return AdjustPriceResponse{}, uc.ErrHandler.ErrorReturn(err)
+	}
+
+	setting, err := uc.settingRepo.FindOneByExpression(ctx, db.Query(db.Equal(true, "status")))
+	if err != nil {
+		return AdjustPriceResponse{}, uc.ErrHandler.ErrorReturn(err)
+	}
+
+	return AdjustPriceResponse{
+		SessionPrice: therapist.Price,
+		AdminFee:     setting.ApplicationFee,
+	}, nil
+}
+
+func (uc Usecase) RescheduleBooking(ctx context.Context, request RescheduleBookingRequest) (response RescheduleBookingResponse, err error) {
+	userLogin := payload.SessionDataUser{}
+	err = uc.Security.GetSessionLogin(ctx, &userLogin)
+	if err != nil {
+		return response, uc.ErrHandler.ErrorReturn(err)
+	}
+
+	booking, err := uc.bookingRepo.FindOneByExpression(ctx, db.Query(
+		db.Equal(request.Code, "code"),
+		db.Equal(userLogin.ID, "user_id"),
+	))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return response, localerror.InvalidData(constant.BookingNotFound.String())
+		}
+		return response, uc.ErrHandler.ErrorReturn(err)
+	}
+
+	activeStatuses, err := uc.statusRepo.FindAllByExpression(ctx, db.Query(
+		db.InArray([]string{constant.BookingStatusPending, constant.BookingStatusScheduled}, "name"),
+	))
+	if err != nil {
+		return response, uc.ErrHandler.ErrorReturn(err)
+	}
+
+	if !isActiveBooking(booking, activeStatuses) {
+		return response, localerror.InvalidData(constant.BookingNotActive)
+	}
+
+	rescheduledAt := uc.Clock.ParseWithTzFromCtx(ctx, request.DateTime, "2006-01-02 15:04:05")
+	if rescheduledAt.IsZero() || rescheduledAt.Before(uc.Clock.Now(ctx)) {
+		return response, localerror.InvalidData(constant.InvalidBookingDateTime)
+	}
+
+	uc.dbTrx.Begin()
+	defer func() {
+		db.TransactionEnd(ctx, &uc.dbTrx, err)
+	}()
+
+	booking.DateTime = rescheduledAt
+	booking.SetUpdated(userLogin.Email)
+	err = db.GetRepo(&uc.dbTrx, domain.Booking{}).
+		UpdateSelectedCols(ctx, booking, "date_time", "updated_at", "updated_by")
+	if err != nil {
+		return response, uc.ErrHandler.ErrorReturn(err)
+	}
+
+	note := request.Note
+	if note == "" {
+		note = constant.RescheduleBookingHistNote
+	}
+	history := domain.BookingStatusHistory{
+		BookingID: booking.ID,
+		StatusID:  booking.StatusID,
+		Notes:     note,
+	}
+	history.SetCreated(userLogin.Email)
+	_, err = db.GetRepo(&uc.dbTrx, domain.BookingStatusHistory{}).
+		Store(ctx, history)
+	if err != nil {
+		return response, uc.ErrHandler.ErrorReturn(err)
+	}
+
+	return RescheduleBookingResponse{
+		Code:      booking.Code,
+		RefNumber: booking.RefNumber,
+		DateTime:  rescheduledAt.Format("2006-01-02 15:04:05"),
+		Status:    booking.Status,
+	}, nil
+}
+
+func isActiveBooking(booking domain.Booking, statuses []domain.MasterBookingStatus) bool {
+	for _, status := range statuses {
+		if booking.StatusID == status.ID || booking.Status == status.Name {
+			return true
+		}
+	}
+
+	return booking.Status == constant.BookingStatusPending ||
+		booking.Status == constant.BookingStatusScheduled
 }

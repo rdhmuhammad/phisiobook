@@ -3,6 +3,8 @@ package payload
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/golang-jwt/jwt/v4"
 )
 
 type UserData struct {
@@ -14,7 +16,7 @@ type UserData struct {
 	RoleName string         `json:"roleName"`
 }
 
-func (authData *UserData) LoadFromMap(m map[string]interface{}) error {
+func (authData *UserData) LoadFromMap(m jwt.MapClaims) error {
 	data, err := json.Marshal(m)
 
 	if err == nil {

@@ -19,6 +19,7 @@ type RegisterResponse struct {
 
 type LoginResponse struct {
 	Email      string `json:"email"`
+	Lang       string
 	UserID     uint   `json:"userId"`
 	Token      string `json:"token"`
 	IsVerified bool   `json:"isVerified"`

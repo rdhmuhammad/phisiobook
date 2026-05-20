@@ -197,6 +197,10 @@ func Debug(msg string) {
 	Log.Debug().Msg(msg)
 }
 
+func Debugf(format string, v ...interface{}) {
+	Log.Debug().Msgf(format, v...)
+}
+
 // Debugf logs a debug level message with formatting
 func (l *ReZero) Debugf(format string, v ...interface{}) {
 	l.logger.Debug().Msgf(format, v...)

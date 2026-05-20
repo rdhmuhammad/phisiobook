@@ -5,6 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/rdhmuhammad/phisiobook/pkg/cache"
 	"github.com/rdhmuhammad/phisiobook/pkg/clock"
 	"github.com/rdhmuhammad/phisiobook/pkg/db"
@@ -13,10 +18,11 @@ import (
 	"github.com/rdhmuhammad/phisiobook/pkg/localize"
 	"github.com/rdhmuhammad/phisiobook/pkg/logger"
 	"github.com/rdhmuhammad/phisiobook/shared/payload"
-	"net/http"
-	"os"
-	"strings"
-	"time"
+	"github.com/zishang520/socket.io/servers/socket/v3"
+
+	"iam_module/internal/core/constant"
+	"iam_module/internal/core/domain"
+	constant2 "iam_module/shared/constant"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -25,9 +31,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/schema"
-	"iam_module/internal/core/constant"
-	"iam_module/internal/core/domain"
-	constant2 "iam_module/shared/constant"
 )
 
 type Auth struct {
@@ -53,7 +56,7 @@ func NewAuth(dbConn *gorm.DB, dbCache cache.DbClient) Auth {
 func (receiver Auth) Authorize(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var authData = payload.UserData{}
-		authDataStr, ok := c.Get("authData")
+		authDataStr, ok := c.Get(string(AuthCodeContext))
 		if ok {
 			authData = authDataStr.(payload.UserData)
 		}
@@ -71,8 +74,6 @@ func (receiver Auth) Authorize(roles ...string) gin.HandlerFunc {
 }
 
 func (receiver Auth) SetSession(ctx context.Context, user payload.SessionDataUser) error {
-	loginCacheKey := "LOGIN_KEY_"
-
 	marshal, err := json.Marshal(user)
 	if err != nil {
 		return err
@@ -80,7 +81,7 @@ func (receiver Auth) SetSession(ctx context.Context, user payload.SessionDataUse
 
 	return receiver.cache.Set(
 		ctx,
-		loginCacheKey+user.UserReference,
+		constant.LoginCacheKey(user.UserReference),
 		string(marshal),
 		time.Hour*time.Duration(receiver.env.GetInt("EXPIRED_TOKEN_JWT", 1)),
 	)
@@ -92,11 +93,10 @@ func (receiver Auth) GetSessionLogin(ctx context.Context, sessionData *payload.S
 }
 
 func (receiver Auth) GetSession(ctx context.Context, authCode string, sessionData *payload.SessionDataUser) error {
-	loginCacheKey := "LOGIN_KEY_"
-	sessionStr, err := receiver.cache.Get(ctx, loginCacheKey+authCode)
+	sessionStr, err := receiver.cache.Get(ctx, constant.LoginCacheKey(authCode))
 	if err != nil {
 		if errors.Is(redis.Nil, err) {
-			return localerror.AccessControlError{Msg: constant2.AccessNotAllowed.String()}
+			return localerror.AccessControlError{Msg: constant2.SessionExpired.String()}
 		}
 		return err
 	}
@@ -113,12 +113,51 @@ func (receiver Auth) GetSession(ctx context.Context, authCode string, sessionDat
 func (receiver Auth) GetUserContext(ctx context.Context) payload.UserData {
 	value := ctx.Value(AuthCodeContext)
 	if value != nil {
-		logger.Debug("data catch from context => " + value.(string))
+		if marshal, err := json.Marshal(value.(payload.UserData)); err == nil {
+			logger.Error(err)
+		} else {
+			logger.Debug("data catch from context => " + string(marshal))
+		}
 		return value.(payload.UserData)
 	}
 
 	logger.Debug("no data in context")
 	return payload.UserData{}
+}
+
+func (receiver Auth) SocketValidate(headerName string) socket.NamespaceMiddleware {
+	return func(client *socket.Socket, next func(*socket.ExtendedError)) {
+		tokenAny := client.Handshake().Auth[headerName]
+		token, ok := tokenAny.(string)
+
+		if token == "" && receiver.env.CheckFlag("POSTMAN_FALLBACK_VALIDATION") {
+			token = client.Handshake().Headers.Header().Get("Authorization")
+			token = strings.TrimPrefix(token, "Bearer ")
+			token = strings.TrimSpace(token)
+			ok = true
+		}
+
+		if !ok || strings.TrimSpace(token) == "" {
+			err := fmt.Errorf("missing token")
+			logger.Debug(err.Error())
+			next(socket.NewExtendedError("unauthorized",
+				payload.DefaultErrorResponseWithMessage(err.Error(), err),
+			))
+			return
+		}
+
+		secret := os.Getenv("SECRET")
+		_, err := receiver.parseToken(token, []byte(secret))
+		if err != nil {
+			logger.Debug(err.Error())
+			next(socket.NewExtendedError("unauthorized",
+				payload.DefaultErrorResponseWithMessage(err.Error(), err),
+			))
+			return
+		}
+
+		next(nil)
+	}
 }
 
 /*
@@ -201,14 +240,7 @@ func (receiver Auth) getAuthData(token *jwt.Token) (map[string]interface{}, bool
 	if !ok {
 		return nil, false
 	}
-
-	var authData map[string]interface{}
-
-	if valid {
-		authData = claims["userData"].(map[string]interface{})
-	}
-
-	return authData, valid
+	return claims, valid
 }
 
 func (receiver Auth) setUserActivity(authData payload.UserData) {

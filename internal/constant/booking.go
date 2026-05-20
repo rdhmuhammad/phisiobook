@@ -7,4 +7,9 @@ const (
 	BookingStatusCanceled  = "canceled"
 
 	PaymentStatusPending = "pending"
+
+	BookingNotActive          = "BookingNotActive"
+	InvalidBookingDateTime    = "InvalidBookingDateTime"
+	RescheduleBookingSuccess  = "RescheduleBookingSuccess"
+	RescheduleBookingHistNote = "Booking session rescheduled by customer"
 )

@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
+
+	constIam "iam_module/shared/constant"
 
 	"github.com/rdhmuhammad/phisiobook/internal/adapter/payload"
 	"github.com/rdhmuhammad/phisiobook/internal/constant"
@@ -89,32 +92,38 @@ func (receiver mapper) ErrorSocket(client *socket.Socket, err error) {
 	}
 	if err != nil {
 		if ok, invErr := receiver.IsInvalidDataError(err); ok {
-			err = client.Emit(payload.AlertError.String(),
-				receiver.localizer.GetLocalized(lang, invErr.Error()))
-			if err != nil {
-				logger.Error(err)
-			}
-			client.Disconnect(true)
+			receiver.emitSocketErrorAndDisconnect(client, receiver.localizer.GetLocalized(lang, invErr.Error()))
 		} else if receiver.IsAccessControlError(err) {
-			err = client.Emit(payload.AlertError.String(),
-				receiver.localizer.GetLocalized(lang, constant.AccessNotAllowed))
-			if err != nil {
-				logger.Error(err)
-			}
-			client.Disconnect(true)
+			receiver.emitSocketErrorAndDisconnect(client, receiver.localizer.GetLocalized(lang, constant.AccessNotAllowed.String()))
 		} else {
-			err = client.Emit(payload.AlertError.String(),
-				receiver.localizer.GetLocalized(lang, constant.InternalError))
-			if err != nil {
-				logger.Error(err)
-			}
+			receiver.emitSocketErrorAndDisconnect(client, receiver.localizer.GetLocalized(lang, constant.InternalError.String()))
 		}
 
 	}
 }
 
+func (receiver mapper) emitSocketErrorAndDisconnect(client *socket.Socket, message string) {
+	logger.Debug(message)
+	ack := client.
+		Timeout(500*time.Millisecond).
+		EmitWithAck(payload.Alert_error.Topic(), message)
+
+	ack(func(_ []any, err error) {
+		if err != nil {
+			logger.Error(err)
+		}
+		client.Disconnect(true)
+	})
+}
+
 func (m mapper) NewResponse(c *gin.Context, res *dto.Response, err error) {
 	userData := m.GetAuthDataFromContext(c)
+	if userData.Lang == "" {
+		value, exists := c.Get(string(constIam.FallBackLangLogin))
+		if exists {
+			userData.Lang = value.(string)
+		}
+	}
 	ok := m.ErrorResponse(c, err)
 	if ok {
 		return
@@ -130,6 +139,12 @@ func (m mapper) NewResponse(c *gin.Context, res *dto.Response, err error) {
 
 func (m mapper) ErrorResponse(c *gin.Context, err error) bool {
 	userData := m.GetAuthDataFromContext(c)
+	if userData.Lang == "" {
+		value, exists := c.Get(string(constIam.FallBackLangLogin))
+		if exists {
+			userData.Lang = value.(string)
+		}
+	}
 	if err != nil {
 		if ok, invErr := m.IsInvalidDataError(err); ok {
 			var templates = make([]localize.TemplatingData, 0)
@@ -158,7 +173,7 @@ func (m mapper) ErrorResponse(c *gin.Context, err error) bool {
 		fmt.Printf("ERROR: %s \n", err.Error())
 		c.JSON(
 			http.StatusInternalServerError,
-			dto.DefaultErrorResponseWithMessage(m.localizer.GetLocalized(userData.Lang, constant.InternalError), err),
+			dto.DefaultErrorResponseWithMessage(m.localizer.GetLocalized(userData.Lang, constant.InternalError.String()), err),
 		)
 		return true
 	}
@@ -222,5 +237,5 @@ func (m mapper) ReplaceLabelErr(template error, params ...string) error {
 		)
 	}
 
-	return fmt.Errorf(customeErr)
+	return errors.New(customeErr)
 }

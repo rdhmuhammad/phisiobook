@@ -33,14 +33,14 @@ func AccessNotAllowed(err string) error {
 
 func AccessNotAllowedUserNotFound(err error) error {
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
-		return AccessControlError{Msg: constant.SessionExpired}
+		return AccessControlError{Msg: constant.SessionExpired.String()}
 	}
 
 	return err
 }
 
 func IsAccessNotAllowedUserNotFound(err error) bool {
-	return err != nil && errors.Is(err, AccessControlError{Msg: constant.SessionExpired})
+	return err != nil && errors.Is(err, AccessControlError{Msg: constant.SessionExpired.String()})
 }
 
 func IsNotFound(err error) bool {

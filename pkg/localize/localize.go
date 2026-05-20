@@ -3,13 +3,15 @@ package localize
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"github.com/rdhmuhammad/phisiobook/pkg/environment"
-	"golang.org/x/text/language"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/rdhmuhammad/phisiobook/pkg/environment"
+	"github.com/rdhmuhammad/phisiobook/pkg/logger"
+	"golang.org/x/text/language"
 )
 
 type lang struct {
@@ -45,6 +47,7 @@ func (l *lang) GetLocalized(lang string, messageId string, templates ...Templati
 	localizeConfig.TemplateData = newTemplate
 	localize, err := l.localizer[lang].Localize(&localizeConfig)
 	if err != nil {
+		logger.Errorf(err.Error())
 		return ""
 	}
 

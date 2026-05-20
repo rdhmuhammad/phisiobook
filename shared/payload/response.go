@@ -18,14 +18,17 @@ func DefaultErrorResponse(err error) *ErrorResponse {
 }
 
 func DefaultErrorResponseWithMessage(msg string, err error) *ErrorResponse {
+	meta := ResponseMeta{
+		Success:      false,
+		MessageTitle: "Oops, something went wrong.",
+		Message:      msg,
+	}
+	if err != nil {
+		meta.ErrorServer = err.Error()
+	}
 	return &ErrorResponse{
-		ResponseMeta: ResponseMeta{
-			Success:      false,
-			MessageTitle: "Oops, something went wrong.",
-			Message:      msg,
-			ErrorServer:  err.Error(),
-		},
-		Data: nil,
+		ResponseMeta: meta,
+		Data:         nil,
 	}
 }
 

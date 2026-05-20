@@ -46,7 +46,7 @@ func (ctrl ServiceController) CreateService(c *gin.Context) {
 	}
 
 	result, err := ctrl.uc.CreateService(c.Request.Context(), request)
-	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(result, constant.CreateService), err)
+	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(result, constant.CreateService.String()), err)
 }
 
 func (ctrl ServiceController) UpdateService(c *gin.Context) {
@@ -64,7 +64,7 @@ func (ctrl ServiceController) UpdateService(c *gin.Context) {
 
 	request.ID = uint(serviceID)
 	result, err := ctrl.uc.UpdateService(c.Request.Context(), request)
-	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(result, constant.UpdateService), err)
+	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(result, constant.UpdateService.String()), err)
 }
 
 func (ctrl ServiceController) DeleteService(c *gin.Context) {
@@ -75,7 +75,7 @@ func (ctrl ServiceController) DeleteService(c *gin.Context) {
 	}
 
 	err = ctrl.uc.DeleteService(c.Request.Context(), uint(serviceID))
-	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponseNoData(constant.DeleteService), err)
+	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponseNoData(constant.DeleteService.String()), err)
 }
 
 func (ctrl ServiceController) GetServiceDetail(c *gin.Context) {
@@ -86,7 +86,7 @@ func (ctrl ServiceController) GetServiceDetail(c *gin.Context) {
 	}
 
 	result, err := ctrl.uc.GetServiceDetail(c.Request.Context(), uint(serviceID))
-	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(result, constant.GetDetailService), err)
+	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(result, constant.GetDetailService.String()), err)
 }
 
 func (ctrl ServiceController) GetServiceList(c *gin.Context) {
@@ -98,12 +98,12 @@ func (ctrl ServiceController) GetServiceList(c *gin.Context) {
 
 	request.SetIfEmpty()
 	result, err := ctrl.uc.GetServiceList(c.Request.Context(), request)
-	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(result, constant.GetListService), err)
+	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(result, constant.GetListService.String()), err)
 }
 
 func (ctrl ServiceController) GetCategories(c *gin.Context) {
 	result, err := ctrl.uc.GetCategories(c.Request.Context())
-	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(result, constant.GetCategories), err)
+	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(result, constant.GetCategories.String()), err)
 }
 
 func (ctrl ServiceController) Route(router *gin.RouterGroup) {

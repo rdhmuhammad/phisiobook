@@ -20,7 +20,7 @@ const (
 	PeriodTypeMonth = "MONTH"
 	PeriodTypeDay   = "DAY"
 
-	// Session Check Middleware
+	// Session Check Auth
 	RequestParams   = "request-params"
 	RequestQuery    = "request-query"
 	RequestBodyJSON = "request-body-json"

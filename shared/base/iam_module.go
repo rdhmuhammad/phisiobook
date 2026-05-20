@@ -8,6 +8,7 @@ import (
 	"github.com/rdhmuhammad/phisiobook/pkg/cache"
 	"github.com/rdhmuhammad/phisiobook/pkg/logger"
 	"github.com/rdhmuhammad/phisiobook/shared/payload"
+	"github.com/zishang520/socket.io/servers/socket/v3"
 
 	md "iam_module/pkg/middleware"
 
@@ -27,6 +28,12 @@ func NewAuth(dbConn *gorm.DB, dbCache cache.DbClient) Security {
 
 // EmptyAuth implement if iam module is not used
 type EmptyAuth struct {
+}
+
+func (e EmptyAuth) SocketValidate(headerName string) socket.NamespaceMiddleware {
+	return func(s *socket.Socket, f func(*socket.ExtendedError)) {
+		logger.Debug("using empty auth")
+	}
 }
 
 func (e EmptyAuth) Validate() gin.HandlerFunc {

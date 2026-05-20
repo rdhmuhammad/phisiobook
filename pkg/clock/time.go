@@ -52,9 +52,9 @@ func (t CLOCK) NowUTC() time.Time {
 	return time.Now().UTC()
 }
 
-func (t CLOCK) ParseWithTzFromCtx(ctx context.Context, layout string, value string) time.Time {
+func (t CLOCK) ParseWithTzFromCtx(ctx context.Context, value string, format string) time.Time {
 	lz := t.GetTimezoneFromContext(ctx)
-	date, err := time.ParseInLocation(layout, value, lz)
+	date, err := time.ParseInLocation(format, value, lz)
 	if err != nil {
 		return time.Time{}
 	}

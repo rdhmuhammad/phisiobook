@@ -2,7 +2,6 @@ package caching_chat
 
 import (
 	"context"
-	"errors"
 	"log"
 	"time"
 
@@ -42,22 +41,14 @@ func NewUsecase(dbConn *gorm.DB, mongoDb *mongodb.Conn, prt base.Port) Usecase {
 func (u Usecase) CacheRoom(ctx context.Context, request CacheRoomRequest, cancle context.CancelFunc) (CacheRoomResponse, error) {
 	defer cancle()
 
-	room, err := u.cacheRoomRepo.FindOneByFilter(
-		ctx,
-		map[string]any{
-			"book_code": request.RoomID,
-		},
-	)
+	room, err := u.getRoom(ctx, request.RoomID)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return CacheRoomResponse{}, localerror.InvalidData(constant.RoomChatNotFound)
-		}
-		return CacheRoomResponse{}, u.ErrHandler.ErrorReturn(err)
+		return CacheRoomResponse{}, err
 	}
 	var createNew = room.RoomIsLive == false
 
 	if !room.IsValid {
-		return CacheRoomResponse{}, localerror.InvalidData(constant.RoomNotValid)
+		return CacheRoomResponse{}, localerror.InvalidData(constant.RoomNotValid.String())
 	}
 
 	switch {
@@ -68,7 +59,7 @@ func (u Usecase) CacheRoom(ctx context.Context, request CacheRoomRequest, cancle
 		room.EmployeeIsLive = request.ActorStatus
 		break
 	default:
-		return CacheRoomResponse{}, localerror.AccessNotAllowed(constant.UserNotFound)
+		return CacheRoomResponse{}, localerror.AccessNotAllowed(constant.UserNotFound.String())
 	}
 
 	room.RoomIsLive = room.UserIsLive || room.EmployeeIsLive
@@ -83,6 +74,22 @@ func (u Usecase) CacheRoom(ctx context.Context, request CacheRoomRequest, cancle
 		UserFullName: room.GetActorName(request.RoomID),
 		ToRef:        room.GetToSocketID(request.Actor),
 	}, nil
+}
+
+func (u Usecase) getRoom(ctx context.Context, roomId string) (domain.RoomSession, error) {
+	room, err := u.cacheRoomRepo.FindOneByFilter(
+		ctx,
+		map[string]any{
+			"book_code": roomId,
+		},
+	)
+	if err != nil {
+		if err.Error() == mongo.ErrNoDocuments.Error() {
+			return domain.RoomSession{}, localerror.InvalidData(constant.RoomChatNotFound.String())
+		}
+		return domain.RoomSession{}, u.ErrHandler.ErrorReturn(err)
+	}
+	return room, nil
 }
 
 func (u Usecase) GetChatRoom(ctx context.Context) ([]ChatRoomListResponse, error) {
@@ -135,7 +142,12 @@ func (u Usecase) GetChatRoom(ctx context.Context) ([]ChatRoomListResponse, error
 	}
 
 	for _, dt := range result {
-		dt.LatestMessage = chatMaps[dt.RoomID][0].Message
+		cht, ok := chatMaps[dt.RoomID]
+		if !ok {
+			continue
+		}
+
+		dt.LatestMessage = cht[0].Message
 		var unread int
 		for _, chat := range chatMaps[dt.RoomID] {
 			if !chat.Read {
@@ -152,7 +164,7 @@ func (u Usecase) GetChatRoom(ctx context.Context) ([]ChatRoomListResponse, error
 type chatRef struct {
 	ChatRef string `gorm:"column:chat_ref" json:"chatRef"`
 	Profile string `gorm:"column:profile" json:"profile"`
-	Name    string `gorm:"column:name" json:"name"`
+	Name    string `gorm:"column:full_name" json:"name"`
 }
 
 func getFilter[T schema.Tabler](
@@ -173,9 +185,14 @@ func getFilter[T schema.Tabler](
 }
 
 func (u Usecase) CacheChat(ctx context.Context, request CacheChatRequest) {
-	store, err := u.chatRepo.Store(ctx, domain.CacheChat{
-		FromID:  request.From,
-		ToID:    request.To,
+	room, err := u.getRoom(ctx, request.RoomID)
+	if err != nil {
+		return
+	}
+
+	_, err = u.chatRepo.Store(ctx, domain.CacheChat{
+		FromID:  request.ActorID,
+		ToID:    room.GetToSocketID(request.ActorID),
 		Message: request.Message,
 		Read:    request.Read,
 		ReadAt:  request.ReadAt,
@@ -184,7 +201,6 @@ func (u Usecase) CacheChat(ctx context.Context, request CacheChatRequest) {
 	if err != nil {
 		u.ErrHandler.ErrorPrint(err)
 	}
-	u.ErrHandler.DebugPrint("value => %v", store)
 
 	<-ctx.Done()
 }

@@ -1,8 +1,8 @@
 package mongodb
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import "go.mongodb.org/mongo-driver/v2/bson"
 
 type BaseEntity interface {
-	GetID() primitive.ObjectID
+	GetID() bson.ObjectID
 	GetCollectionName() string
 }

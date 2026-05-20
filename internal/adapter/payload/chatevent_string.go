@@ -8,17 +8,17 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
-	_ = x[NotifyJoin-0]
-	_ = x[NotifyLeave-1]
-	_ = x[NotifyOnline-2]
-	_ = x[NotifyOffline-3]
+	_ = x[Notify_join-0]
+	_ = x[Notify_leave-1]
+	_ = x[Notify_online-2]
+	_ = x[Notify_offline-3]
 	_ = x[Message-4]
-	_ = x[AlertError-5]
+	_ = x[Alert_error-5]
 }
 
-const _ChatEvent_name = "NotifyJoinNotifyLeaveNotifyOnlineNotifyOfflineMessageAlertError"
+const _ChatEvent_name = "Notify_joinNotify_leaveNotify_onlineNotify_offlineMessageAlert_error"
 
-var _ChatEvent_index = [...]uint8{0, 10, 21, 33, 46, 53, 63}
+var _ChatEvent_index = [...]uint8{0, 11, 23, 36, 50, 57, 68}
 
 func (i ChatEvent) String() string {
 	idx := int(i) - 0

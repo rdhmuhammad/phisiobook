@@ -57,9 +57,9 @@ func (t clock) Now(ctx context.Context) time.Time {
 	return time.Now().In(lz)
 }
 
-func (t clock) ParseWithTzFromCtx(ctx context.Context, layout string, value string) time.Time {
+func (t clock) ParseWithTzFromCtx(ctx context.Context, value string, format string) time.Time {
 	lz := t.GetTimezoneFromContext(ctx)
-	date, err := time.ParseInLocation(layout, value, lz)
+	date, err := time.ParseInLocation(format, value, lz)
 	if err != nil {
 		return time.Time{}
 	}
