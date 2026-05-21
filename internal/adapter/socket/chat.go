@@ -89,6 +89,7 @@ func (ctrl ChatSocket) cacheRoom(io *cio.NS, client *socket.Socket, action actio
 					err := sc.
 						Emit(payload.Notify_join.Topic(), payload.ChatMessage{
 							Message: result.UserFullName + " Join the room",
+							ActorId: userRef,
 						})
 					if err != nil {
 						logger.Error(err)
@@ -96,9 +97,15 @@ func (ctrl ChatSocket) cacheRoom(io *cio.NS, client *socket.Socket, action actio
 					return
 				}
 
+				text := " Leave the room"
+				if action == joining {
+					text = " Join the room"
+				}
+
 				err = sc.
 					Emit(actCacheEv[action].String(), payload.ChatMessage{
-						Message: result.UserFullName + " Join the room",
+						Message: result.UserFullName + text,
+						ActorId: userRef,
 					})
 				if err != nil {
 					logger.Error(err)
@@ -138,6 +145,7 @@ func (ctrl ChatSocket) SendChat(io *cio.NS, client *socket.Socket, message cio.M
 		}
 	}
 
+	sentMsg.ActorId = userRef
 	remoteSocket := io.Space.To(socket.Room(roomId)).FetchSockets()
 	remoteSocket(func(sockets []*socket.RemoteSocket, err error) {
 		for _, rs := range sockets {
@@ -175,7 +183,7 @@ func (ctrl ChatSocket) LeaveRoom(io *cio.NS, client *socket.Socket) {
 func (ctrl ChatSocket) OnSpace(ns cio.NSInitiate) {
 	ns("chat", nil).
 		UserRoom().
-		Auth(ctrl.Security.SocketValidate("token")).
+		Auth(ctrl.Security.SocketValidate("token", "userRef")).
 		Connect(ctrl.JoinRoom).
 		Event(payload.Message.Topic(), &payload.ChatMessage{}, ctrl.SendChat).
 		Disconnect(ctrl.LeaveRoom).Build()

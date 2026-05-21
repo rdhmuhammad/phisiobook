@@ -224,10 +224,7 @@ func (u Usecase) GetCached(ctx context.Context, request GetCachedRequest) (dto.P
 	var result = make([]CachedChat, len(cacheChats.Data))
 	for i, cacheChat := range cacheChats.Data {
 		result[i] = CachedChat{
-			FromID:  cacheChat.FromID,
-			ToID:    cacheChat.ToID,
 			Message: cacheChat.Message,
-			RoomID:  cacheChat.RoomID,
 		}
 	}
 

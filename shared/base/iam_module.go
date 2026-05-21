@@ -30,7 +30,7 @@ func NewAuth(dbConn *gorm.DB, dbCache cache.DbClient) Security {
 type EmptyAuth struct {
 }
 
-func (e EmptyAuth) SocketValidate(headerName string) socket.NamespaceMiddleware {
+func (e EmptyAuth) SocketValidate(headerName string, idReqName string) socket.NamespaceMiddleware {
 	return func(s *socket.Socket, f func(*socket.ExtendedError)) {
 		logger.Debug("using empty auth")
 	}

@@ -13,6 +13,7 @@ type UserAdmin struct {
 	Phone      string       `json:"phone"`
 	Role       MasterRole   `gorm:"foreignKey:RoleID" json:"role"`
 	RoleID     uint         `gorm:"column:role_id" json:"roleID"`
+	ChatRef    string       `gorm:"column:chat_ref" json:"chatRef"`
 	Password   string       `json:"password"`
 	AuthCode   string       `json:"authCode"`
 	IsActive   int32        `gorm:"column:is_active" json:"isActive"`

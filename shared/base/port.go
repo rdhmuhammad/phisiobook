@@ -54,7 +54,7 @@ func NewPort(dbConn *gorm.DB, dbCache cache.DbClient, minioStr miniostorage.Stor
 }
 
 type Security interface {
-	SocketValidate(headerName string) socket.NamespaceMiddleware
+	SocketValidate(headerName string, idReqName string) socket.NamespaceMiddleware
 	Validate() gin.HandlerFunc
 	GetUserContext(ctx context.Context) payload.UserData
 	Authorize(roles ...string) gin.HandlerFunc

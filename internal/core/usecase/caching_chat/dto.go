@@ -16,10 +16,8 @@ type ChatRoomListResponse struct {
 }
 
 type CachedChat struct {
-	ToID    string `json:"to_id"`
 	Message string `json:"message"`
-	FromID  string `json:"from_id"`
-	RoomID  string `json:"room_id"`
+	ActorID string `json:"actor_id"`
 }
 
 type CacheRoomRequest struct {

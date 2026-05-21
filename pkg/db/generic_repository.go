@@ -3,12 +3,13 @@ package db
 import (
 	"context"
 	"fmt"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
-	"gorm.io/gorm/schema"
 	"reflect"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"gorm.io/gorm/schema"
 )
 
 type GenericRepository[T schema.Tabler] struct {
@@ -194,6 +195,12 @@ type GenericRepositoryInterface[T any] interface {
 		ctx context.Context,
 		entity interface{},
 		id interface{},
+	) error
+	FindOneByExpSelectionWithCancle(
+		ctx context.Context,
+		cancle context.CancelFunc,
+		entity interface{},
+		cond []clause.Expression,
 	) error
 	FindOneByExpSelection(
 		ctx context.Context,
@@ -729,6 +736,27 @@ func (repo GenericRepository[T]) FindOneByIDSelection(
 		Table(repo.model.TableName()).
 		Select(selection).
 		First(entity, "id = ?", id).Error
+
+	return err
+}
+
+func (repo GenericRepository[T]) FindOneByExpSelectionWithCancle(
+	ctx context.Context,
+	cancle context.CancelFunc,
+	entity interface{},
+	cond []clause.Expression,
+) error {
+	defer cancle()
+	selection, err := repo.extractSelection(entity)
+	if err != nil {
+		return err
+	}
+
+	err = repo.db.WithContext(ctx).
+		Table(repo.model.TableName()).
+		Select(selection).
+		Where(clause.Where{Exprs: cond}).
+		First(entity).Error
 
 	return err
 }

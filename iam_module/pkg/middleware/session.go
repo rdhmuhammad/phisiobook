@@ -125,7 +125,7 @@ func (receiver Auth) GetUserContext(ctx context.Context) payload.UserData {
 	return payload.UserData{}
 }
 
-func (receiver Auth) SocketValidate(headerName string) socket.NamespaceMiddleware {
+func (receiver Auth) SocketValidate(headerName string, idReqName string) socket.NamespaceMiddleware {
 	return func(client *socket.Socket, next func(*socket.ExtendedError)) {
 		tokenAny := client.Handshake().Auth[headerName]
 		token, ok := tokenAny.(string)
@@ -139,7 +139,7 @@ func (receiver Auth) SocketValidate(headerName string) socket.NamespaceMiddlewar
 
 		if !ok || strings.TrimSpace(token) == "" {
 			err := fmt.Errorf("missing token")
-			logger.Debug(err.Error())
+			logger.Error(err)
 			next(socket.NewExtendedError("unauthorized",
 				payload.DefaultErrorResponseWithMessage(err.Error(), err),
 			))
@@ -147,9 +147,43 @@ func (receiver Auth) SocketValidate(headerName string) socket.NamespaceMiddlewar
 		}
 
 		secret := os.Getenv("SECRET")
-		_, err := receiver.parseToken(token, []byte(secret))
+		claim, err := receiver.parseToken(token, []byte(secret))
 		if err != nil {
-			logger.Debug(err.Error())
+			logger.Error(err)
+			next(socket.NewExtendedError("unauthorized",
+				payload.DefaultErrorResponseWithMessage(err.Error(), err),
+			))
+			return
+		}
+		authData, valid := receiver.getAuthData(claim)
+		userDataStruct := payload.UserData{}
+		err = userDataStruct.LoadFromMap(authData)
+		if err != nil && !valid {
+			logger.Error(fmt.Errorf("err = %s, valid = %v", err.Error(), valid))
+			next(socket.NewExtendedError("unauthorized",
+				payload.DefaultErrorResponseWithMessage(err.Error(), err),
+			))
+			return
+		}
+
+		chatRef := ""
+		var errRef error
+		if userDataStruct.RoleName == constant.RoleIsUser {
+			chatRef, errRef = getChatRef(userDataStruct, receiver.userRepo, receiver.env)
+		} else {
+			chatRef, errRef = getChatRef(userDataStruct, receiver.userRepo, receiver.env)
+		}
+		if errRef != nil {
+			logger.Error(errRef)
+			next(socket.NewExtendedError("unauthorized",
+				payload.DefaultErrorResponseWithMessage(errRef.Error(), errRef),
+			))
+			return
+		}
+
+		if chatRef != client.Handshake().Query.Query().Get("userRef") {
+			err := fmt.Errorf("invalid userRef")
+			logger.Error(err)
 			next(socket.NewExtendedError("unauthorized",
 				payload.DefaultErrorResponseWithMessage(err.Error(), err),
 			))
@@ -158,6 +192,29 @@ func (receiver Auth) SocketValidate(headerName string) socket.NamespaceMiddlewar
 
 		next(nil)
 	}
+}
+
+func getChatRef[T schema.Tabler](
+	userDataStruct payload.UserData,
+	userRepo db.GenericRepository[T],
+	env environment.ENV,
+) (string, error) {
+	timeout, cancelFunc := context.WithTimeout(context.Background(), time.Duration(env.GetInt("TIMEOUT_IN_SECOND", 1)))
+	type t struct {
+		ChatRef string `gorm:"column:chat_ref" json:"chatRef"`
+	}
+	var user = t{}
+	err := userRepo.FindOneByExpSelectionWithCancle(
+		timeout,
+		cancelFunc,
+		&user,
+		db.Query(db.Equal(userDataStruct.UserId, "auth_code")),
+	)
+	if err != nil {
+		logger.Error(err)
+		return "", err
+	}
+	return user.ChatRef, nil
 }
 
 /*

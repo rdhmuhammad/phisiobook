@@ -13,6 +13,7 @@ type User struct {
 	Phone      string       `json:"phone"`
 	Email      string       `json:"email"`
 	Password   string       `json:"password"`
+	ChatRef    string       `gorm:"column:chat_ref" json:"chatRef"`
 	IsVerified int32        `gorm:"column:is_verified" json:"isVerified"`
 	OTPCode    int32        `gorm:"column:otp_code" json:"otpCode"`
 	AuthCode   string       `json:"authCode"`
