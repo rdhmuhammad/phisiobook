@@ -38,6 +38,7 @@ func main() {
 			controller.NewHealthController(conn.Db, ctrl, port),
 			iam.NewUserManagementController(conn.Db, port, ctrl),
 			controller.NewChatController(conn.Db, conn.MongoDb, ctrl, port),
+			controller.NewHistoryController(conn.Db, ctrl, port),
 			controller.NewBookingController(conn.Db, conn.MongoDb, port, ctrl),
 			controller.NewServiceController(conn.Db, port, ctrl),
 		}

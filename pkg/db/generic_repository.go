@@ -173,6 +173,7 @@ type GenericRepositoryInterface[T any] interface {
 		cond []clause.Expression,
 	) (T, error)
 	FindPagedByExpressionJoin(ctx context.Context, cond []clause.Expression, paginate PaginationQuery, join []string, preload []string, expType int) ([]T, int, error)
+	FindPagedByExpressionJoinOrdered(ctx context.Context, cond []clause.Expression, paginate PaginationQuery, join []string, preload []string, expType int, order []string) ([]T, int, error)
 	FindAllByExpressionPaginate(
 		ctx context.Context,
 		paginate PaginationQuery,
@@ -608,6 +609,51 @@ func (repo GenericRepository[T]) FindPagedByExpressionJoin(
 	err := db.Find(&result).
 		Limit(limit).
 		Offset(offset).Error
+
+	return result, int(total), err
+}
+
+func (repo GenericRepository[T]) FindPagedByExpressionJoinOrdered(
+	ctx context.Context,
+	cond []clause.Expression,
+	paginate PaginationQuery,
+	join []string,
+	preload []string,
+	expType int,
+	order []string,
+) ([]T, int, error) {
+	var result []T
+	var total int64
+	db := repo.db.WithContext(ctx).
+		Model(&result)
+
+	db = repo.applyWhereClause(cond, expType, db)
+
+	for _, j := range join {
+		db = db.Joins(j)
+	}
+
+	for _, p := range preload {
+		db = db.Preload(p)
+	}
+
+	errCount := db.Count(&total).Error
+	if errCount != nil {
+		return nil, 0, errCount
+	}
+
+	for _, o := range order {
+		db = db.Order(o)
+	}
+
+	offset := paginate.PerPage * (paginate.Page - 1)
+	limit := paginate.PerPage
+
+	err := db.
+		Offset(offset).
+		Limit(limit).
+		Find(&result).
+		Error
 
 	return result, int(total), err
 }

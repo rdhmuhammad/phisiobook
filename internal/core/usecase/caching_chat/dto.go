@@ -16,8 +16,9 @@ type ChatRoomListResponse struct {
 }
 
 type CachedChat struct {
-	Message string `json:"message"`
-	ActorID string `json:"actor_id"`
+	Message string    `json:"message"`
+	ActorID string    `json:"actorId"`
+	SendAt  time.Time `json:"sendAt"`
 }
 
 type CacheRoomRequest struct {

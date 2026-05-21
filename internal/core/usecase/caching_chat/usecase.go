@@ -212,6 +212,10 @@ func (u Usecase) SetRoomExpired(ctx context.Context, isExpired bool) {
 
 func (u Usecase) GetCached(ctx context.Context, request GetCachedRequest) (dto.PaginationResponse[CachedChat], error) {
 	userContext := u.Security.GetUserContext(ctx)
+	tz := userContext.Tz
+	if tz == nil {
+		tz = time.UTC
+	}
 
 	cacheChats, err := u.chatRepo.FindAllByFilterPaged(
 		ctx,
@@ -225,6 +229,8 @@ func (u Usecase) GetCached(ctx context.Context, request GetCachedRequest) (dto.P
 	for i, cacheChat := range cacheChats.Data {
 		result[i] = CachedChat{
 			Message: cacheChat.Message,
+			ActorID: cacheChat.FromID,
+			SendAt:  cacheChat.CreatedAt.In(tz),
 		}
 	}
 
@@ -242,7 +248,7 @@ func (u Usecase) GetCached(ctx context.Context, request GetCachedRequest) (dto.P
 		if err != nil {
 			u.ErrHandler.ErrorPrint(err)
 		}
-	}(userContext.Tz)
+	}(tz)
 
 	return dto.NewPagination(result, int(cacheChats.Total), int(cacheChats.Limit), int(cacheChats.Page)), nil
 }
@@ -251,9 +257,10 @@ func (u Usecase) GetCached(ctx context.Context, request GetCachedRequest) (dto.P
 func (u Usecase) Store(ctx context.Context, cancel context.CancelFunc, payload chat_io.Transporter) {
 	defer cancel()
 	var data = domain.CacheChat{
-		ToID:    payload.ToID,
-		Message: payload.Message,
-		RoomID:  payload.RoomID,
+		ToID:      payload.ToID,
+		Message:   payload.Message,
+		CreatedAt: time.Now().UTC(),
+		RoomID:    payload.RoomID,
 	}
 	_, err := u.chatRepo.Store(ctx, data)
 	if err != nil {

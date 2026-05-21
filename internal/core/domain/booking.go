@@ -16,6 +16,7 @@ type Booking struct {
 	User       *UserExtended          `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	Therapist  *Therapist             `gorm:"foreignKey:TherapistID" json:"therapist,omitempty"`
 	City       *MasterCity            `gorm:"foreignKey:CityID" json:"city,omitempty"`
+	Payment    *Payment               `gorm:"foreignKey:BookingID" json:"payment,omitempty"`
 	StatusHist []BookingStatusHistory `gorm:"foreignKey:BookingID" json:"statusHist,omitempty"`
 }
 

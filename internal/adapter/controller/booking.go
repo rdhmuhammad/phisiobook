@@ -136,7 +136,7 @@ func (r BookingController) Route(routeGr *gin.RouterGroup) {
 	bookingRouter.GET("/dropdown-cities", r.GetCityDropdown)
 	bookingRouter.GET("/dropdown-therapist/:cityId", r.GetTherapistDropdown)
 	bookingRouter.GET("/adjust-price/:therapistCode", r.GetAdjustPrice)
-	bookingRouter.PATCH("/:code/reschedule",
+	bookingRouter.PUT("/reschedule/:code",
 		r.Security.Validate(),
 		r.Security.Authorize(constant.RoleIsUser),
 		r.RescheduleBooking,
