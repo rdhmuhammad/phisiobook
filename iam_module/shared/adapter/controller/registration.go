@@ -96,7 +96,7 @@ func (ctrl AuthController) Route(router *gin.RouterGroup) {
 		ctrl.Register,
 	)
 
-	userAuth.POST("/login",
+	userAuth.POST("/user/login",
 		func(c *gin.Context) {
 			ctrl.Login(c, constant.ContextMobile)
 		},
