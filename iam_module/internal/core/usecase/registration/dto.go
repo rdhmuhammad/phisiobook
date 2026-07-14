@@ -14,13 +14,13 @@ type LoginRequest struct {
 }
 
 type RegisterResponse struct {
-	UserID uint `json:"userId"`
+	Code string `json:"code"`
 }
 
 type LoginResponse struct {
 	Email      string `json:"email"`
 	Lang       string
-	UserID     uint   `json:"userId"`
+	Code       string `json:"code"`
 	Token      string `json:"token"`
 	IsVerified bool   `json:"isVerified"`
 }

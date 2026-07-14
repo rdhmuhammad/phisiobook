@@ -1,10 +1,5 @@
 package booking
 
-type CityDropdownResponse struct {
-	ID   uint   `json:"id"`
-	Name string `json:"name"`
-}
-
 type TherapistDropdownResponse struct {
 	Code        string  `json:"code"`
 	Price       string  `json:"price"`

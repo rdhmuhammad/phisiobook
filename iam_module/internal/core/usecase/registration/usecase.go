@@ -215,7 +215,7 @@ func (u Usecase) Login(ctx context.Context, request LoginRequest) (LoginResponse
 
 	return LoginResponse{
 		Lang:       userMobile.Lang,
-		UserID:     user.GetID(),
+		Code:       user.GetCode(),
 		Email:      user.GetEmail(),
 		Token:      token,
 		IsVerified: user.GetIsVerified(),
@@ -242,8 +242,23 @@ func (u Usecase) Register(ctx context.Context, request RegisterRequest) (Registe
 		return RegisterResponse{}, err
 	}
 
+	code, err := u.Davinci.GenerateUniqueKeyWithPredicate(
+		u.Env.Get("SECRET_USER_KEY"),
+		request.Email,
+		10,
+		func(result string) (bool, error) {
+			return u.userRepo.IsExistCondition(ctx, db.Query(
+				db.Equal(result, "code"),
+			))
+		},
+	)
+	if err != nil {
+		return RegisterResponse{}, err
+	}
+
 	user := domain.User{
 		Email:      request.Email,
+		Code:       code,
 		Password:   encryptMessage,
 		FullName:   request.FullName,
 		IsVerified: 0,
@@ -281,7 +296,7 @@ func (u Usecase) Register(ctx context.Context, request RegisterRequest) (Registe
 		}
 	}
 
-	return RegisterResponse{UserID: user.ID}, nil
+	return RegisterResponse{Code: user.Code}, nil
 }
 
 func (u Usecase) VerifyAcc(ctx context.Context, request VerifyAccRequest) (VerifyAccResponse, error) {
@@ -402,7 +417,6 @@ func (u Usecase) GenerateAndSendOTP(
 		user.IsVerified = 0
 		err := u.userRepo.UpdateSelectedCols(ctx, user, "otp_code", "is_verified")
 		if err != nil {
-
 			return SendOtpResponse{}, err
 		}
 	}

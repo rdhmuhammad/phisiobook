@@ -58,6 +58,7 @@ func (receiver *User) GetName() string             { return receiver.FullName }
 func (receiver *User) GetEmail() string            { return receiver.Email }
 func (receiver *User) GetPassword() string         { return receiver.Password }
 func (receiver *User) GetAuthCode() string         { return receiver.AuthCode }
+func (receiver *User) GetCode() string             { return receiver.Code }
 func (receiver *User) SetID(id uint)               { receiver.ID = id }
 func (receiver *User) SetName(name string)         { receiver.FullName = name }
 func (receiver *User) SetEmail(email string)       { receiver.Email = email }

@@ -6,23 +6,6 @@ import (
 	"github.com/rdhmuhammad/phisiobook/pkg/db"
 )
 
-func (uc Usecase) GetCityDropdown(ctx context.Context) ([]CityDropdownResponse, error) {
-	cities, err := uc.cityRepo.FindAll(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]CityDropdownResponse, len(cities))
-	for i, city := range cities {
-		result[i] = CityDropdownResponse{
-			ID:   city.ID,
-			Name: city.Name,
-		}
-	}
-
-	return result, nil
-}
-
 func (uc Usecase) GetTherapist(ctx context.Context, cityId uint) ([]TherapistDropdownResponse, error) {
 	therapist, _, err := uc.therapistRepo.FindPagedByExpressionJoin(
 		ctx,

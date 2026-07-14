@@ -4,6 +4,7 @@ import "time"
 
 type UserEntityInterface interface {
 	GetID() uint
+	GetCode() string
 	GetName() string
 	GetEmail() string
 	GetPassword() string

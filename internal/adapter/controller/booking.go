@@ -33,7 +33,6 @@ type BookingUsecase interface {
 	CreateBooking(ctx context.Context, request booking.CreateBookingRequest) error
 	GetAdjustPrice(ctx context.Context, therapistCode string) (booking.AdjustPriceResponse, error)
 	RescheduleBooking(ctx context.Context, request booking.RescheduleBookingRequest) (booking.RescheduleBookingResponse, error)
-	GetCityDropdown(ctx context.Context) ([]booking.CityDropdownResponse, error)
 	GetTherapist(ctx context.Context, cityId uint) ([]booking.TherapistDropdownResponse, error)
 }
 
@@ -97,11 +96,6 @@ func (ctrl BookingController) GetTherapistDropdown(c *gin.Context) {
 	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(res, constant.DropdownTherapistSuccess.String()), err)
 }
 
-func (ctrl BookingController) GetCityDropdown(c *gin.Context) {
-	res, err := ctrl.usecase.GetCityDropdown(c.Request.Context())
-	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(res, constant.DropdownCitySuccess.String()), err)
-}
-
 func (ctrl BookingController) GetAdjustPrice(c *gin.Context) {
 	therapistCode := c.Param("therapistCode")
 	res, err := ctrl.usecase.GetAdjustPrice(c.Request.Context(), therapistCode)
@@ -133,7 +127,6 @@ func (r BookingController) Route(routeGr *gin.RouterGroup) {
 		),
 		r.CreateBooking,
 	)
-	bookingRouter.GET("/dropdown-cities", r.GetCityDropdown)
 	bookingRouter.GET("/dropdown-therapist/:cityId", r.GetTherapistDropdown)
 	bookingRouter.GET("/adjust-price/:therapistCode", r.GetAdjustPrice)
 	bookingRouter.PUT("/reschedule/:code",

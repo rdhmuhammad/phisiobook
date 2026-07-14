@@ -86,7 +86,7 @@ func (ctrl AuthController) ResendOTP(c *gin.Context) {
 }
 
 func (ctrl AuthController) Route(router *gin.RouterGroup) {
-	userAuth := router.Group("/auth")
+	userAuth := router.Group("/auth-user")
 	userAuth.POST("/register",
 		ctrl.Idem.Idempotent(
 			"/register",

@@ -71,6 +71,7 @@ func (receiver *UserAdmin) SetIsVerified(status bool) {
 func (receiver *UserAdmin) GetID() uint                 { return receiver.ID }
 func (receiver *UserAdmin) GetName() string             { return receiver.FullName }
 func (receiver *UserAdmin) GetEmail() string            { return receiver.Email }
+func (receiver *UserAdmin) GetCode() string             { return receiver.Code }
 func (receiver *UserAdmin) GetPassword() string         { return receiver.Password }
 func (receiver *UserAdmin) GetAuthCode() string         { return receiver.AuthCode }
 func (receiver *UserAdmin) SetID(id uint)               { receiver.ID = id }
