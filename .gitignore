@@ -10,3 +10,4 @@ resource/docker/minio/data/
 resource/docker/mongodb/data/
 resource/docker/redis/data/
 .tmp-reg-tests
+bin

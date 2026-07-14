@@ -4,7 +4,6 @@ package controller
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/rdhmuhammad/phisiobook/internal/adapter/payload"
 	"github.com/rdhmuhammad/phisiobook/internal/constant"
@@ -33,7 +32,6 @@ type BookingUsecase interface {
 	CreateBooking(ctx context.Context, request booking.CreateBookingRequest) error
 	GetAdjustPrice(ctx context.Context, therapistCode string) (booking.AdjustPriceResponse, error)
 	RescheduleBooking(ctx context.Context, request booking.RescheduleBookingRequest) (booking.RescheduleBookingResponse, error)
-	GetTherapist(ctx context.Context, cityId uint) ([]booking.TherapistDropdownResponse, error)
 }
 
 func NewBookingController(dbConn *gorm.DB, mongoConn *mongodb.Conn, prt base.Port, ctrl base.BaseController) BookingController {
@@ -85,17 +83,6 @@ func (ctrl BookingController) CreateBooking(c *gin.Context) {
 	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponseNoData(""), err)
 }
 
-func (ctrl BookingController) GetTherapistDropdown(c *gin.Context) {
-	cityId, err := strconv.ParseUint(c.Param("cityId"), 10, 64)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.DefaultErrorResponse(err))
-		return
-	}
-
-	res, err := ctrl.usecase.GetTherapist(c.Request.Context(), uint(cityId))
-	ctrl.Mapper.NewResponse(c, dto.NewSuccessResponse(res, constant.DropdownTherapistSuccess.String()), err)
-}
-
 func (ctrl BookingController) GetAdjustPrice(c *gin.Context) {
 	therapistCode := c.Param("therapistCode")
 	res, err := ctrl.usecase.GetAdjustPrice(c.Request.Context(), therapistCode)
@@ -127,7 +114,6 @@ func (r BookingController) Route(routeGr *gin.RouterGroup) {
 		),
 		r.CreateBooking,
 	)
-	bookingRouter.GET("/dropdown-therapist/:cityId", r.GetTherapistDropdown)
 	bookingRouter.GET("/adjust-price/:therapistCode", r.GetAdjustPrice)
 	bookingRouter.PUT("/reschedule/:code",
 		r.Security.Validate(),

@@ -13,16 +13,46 @@ import (
 
 type Usecase struct {
 	base.Port
-	repo     db.GenericRepository[domain.SummaryHomepage]
-	cityRepo db.GenericRepository[domain.MasterCity]
+	repo          db.GenericRepository[domain.SummaryHomepage]
+	cityRepo      db.GenericRepository[domain.MasterCity]
+	therapistRepo db.GenericRepository[domain.Therapist]
 }
 
 func New(dbConn *gorm.DB, prt base.Port) Usecase {
 	return Usecase{
-		Port:     prt,
-		repo:     db.NewGenericeRepo(dbConn, domain.SummaryHomepage{}),
-		cityRepo: db.NewGenericeRepo(dbConn, domain.MasterCity{}),
+		Port:          prt,
+		repo:          db.NewGenericeRepo(dbConn, domain.SummaryHomepage{}),
+		cityRepo:      db.NewGenericeRepo(dbConn, domain.MasterCity{}),
+		therapistRepo: db.NewGenericeRepo(dbConn, domain.Therapist{}),
 	}
+}
+
+func (uc Usecase) GetTherapist(ctx context.Context, cityId uint) ([]TherapistDropdownResponse, error) {
+	therapist, _, err := uc.therapistRepo.FindPagedByExpressionJoin(
+		ctx,
+		db.Query(db.Equal(cityId, "city_id")),
+		db.PaginationQuery{Page: 1, PerPage: 5},
+		[]string{"TherapyType"}, nil,
+		db.ExpressionOr,
+	)
+	if err != nil {
+		return nil, uc.ErrHandler.ErrorReturn(err)
+	}
+
+	var result = make([]TherapistDropdownResponse, len(therapist))
+	for i, t := range therapist {
+		result[i] = TherapistDropdownResponse{
+			Code:        t.Code,
+			Name:        t.Name,
+			Field:       t.TherapyType.Name,
+			Profile:     t.GetProfile(),
+			YearOnField: t.ExperienceYear,
+			Price:       uc.FormatRupiah(t.Price),
+			Rating:      float32(t.Rating),
+		}
+	}
+
+	return result, nil
 }
 
 func (uc Usecase) GetCityDropdown(ctx context.Context) ([]CityDropdownResponse, error) {
