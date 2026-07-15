@@ -588,6 +588,108 @@
           }
         }
       ]
+    },
+    {
+      "funIden": "therapistGroup",
+      "name": "Therapist",
+      "item": [
+        {
+          "funIden": "therapistGroup.Register",
+          "name": "Register",
+          "request": {
+            "funIden": "",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Dr. Sarah Johnson\",\n  \"email\": \"sarah@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"phone\": \"081234567890\",\n  \"profile\": \"data:image/png;base64,...\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/therapist/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "therapist",
+                "register"
+              ]
+            }
+          }
+        },
+        {
+          "funIden": "therapistGroup.Onboarding",
+          "name": "Onboarding",
+          "request": {
+            "funIden": "",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "ktpFile",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "sipFile",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "strFile",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "ijazahFile",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "bankCode",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "accName",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "accNumber",
+                  "value": "",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/therapist/onboarding",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "therapist",
+                "onboarding"
+              ]
+            }
+          }
+        }
+      ]
     }
   ],
   "variable": [
