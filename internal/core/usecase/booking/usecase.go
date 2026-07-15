@@ -19,7 +19,7 @@ import (
 
 type Usecase struct {
 	base.Port
-	dbTrx          db.DBTransaction
+	dbConn         *gorm.DB
 	cityRepo       db.GenericRepository[domain.MasterCity]
 	statusHistRepo db.GenericRepository[domain.BookingStatusHistory]
 	statusRepo     db.GenericRepository[domain.MasterBookingStatus]
@@ -33,15 +33,8 @@ type Usecase struct {
 
 func NewUsecase(dbCon *gorm.DB, mongoConn *mongodb.Conn, prt base.Port) Usecase {
 	return Usecase{
-		Port: prt,
-		dbTrx: db.NewDBTransaction(dbCon,
-			db.NewGenericeRepoPointr(dbCon, domain.Payment{}),
-			db.NewGenericeRepoPointr(dbCon, domain.PaymentDetail{}),
-			db.NewGenericeRepoPointr(dbCon, domain.Booking{}),
-			db.NewGenericeRepoPointr(dbCon, domain.UserExtended{}),
-			db.NewGenericeRepoPointr(dbCon, domain.UserAdminExtended{}),
-			db.NewGenericeRepoPointr(dbCon, domain.BookingStatusHistory{}),
-		),
+		Port:           prt,
+		dbConn:         dbCon,
 		cityRepo:       db.NewGenericeRepo(dbCon, domain.MasterCity{}),
 		statusHistRepo: db.NewGenericeRepo(dbCon, domain.BookingStatusHistory{}),
 		statusRepo:     db.NewGenericeRepo(dbCon, domain.MasterBookingStatus{}),
@@ -63,10 +56,14 @@ func (uc Usecase) UpdateStatus(ctx context.Context, request UpdateStatus) (roomI
 		return roomId, uc.ErrHandler.ErrorReturn(err)
 	}
 
-	uc.dbTrx.Begin()
-	defer func(err error) {
-		db.TransactionEnd(ctx, &uc.dbTrx, err)
-	}(err)
+	trx := db.NewTransaction(uc.dbConn)
+	defer func() {
+		if err != nil {
+			trx.End(err)
+		} else {
+			trx.End(nil)
+		}
+	}()
 
 	status, err := uc.statusRepo.FindOneByExpression(ctx, db.Query(db.Equal(request.Status, "name")))
 	if err != nil {
@@ -80,7 +77,7 @@ func (uc Usecase) UpdateStatus(ctx context.Context, request UpdateStatus) (roomI
 		Notes:     request.Note,
 	}
 	history.SetCreated(userLogin.Email)
-	_, err = db.GetRepo(&uc.dbTrx, domain.BookingStatusHistory{}).
+	_, err = db.GetRepo(trx, domain.BookingStatusHistory{}).
 		Store(ctx, history)
 	if err != nil {
 		return roomId, uc.ErrHandler.ErrorReturn(err)
@@ -90,7 +87,7 @@ func (uc Usecase) UpdateStatus(ctx context.Context, request UpdateStatus) (roomI
 	booking.Status = request.Status
 	booking.StatusID = status.ID
 
-	err = db.GetRepo(&uc.dbTrx, domain.Booking{}).
+	err = db.GetRepo(trx, domain.Booking{}).
 		Update(ctx, booking)
 	if err != nil {
 		return roomId, uc.ErrHandler.ErrorReturn(err)
@@ -112,11 +109,14 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 		return uc.ErrHandler.ErrorReturn(err)
 	}
 
-	uc.dbTrx.Begin()
-
-	defer func(err error) {
-		db.TransactionEnd(ctx, &uc.dbTrx, err)
-	}(err)
+	trx := db.NewTransaction(uc.dbConn)
+	defer func() {
+		if err != nil {
+			trx.End(err)
+		} else {
+			trx.End(nil)
+		}
+	}()
 
 	type tg struct {
 		ID     uint   `gorm:"column:id" json:"id"`
@@ -139,7 +139,7 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 	}
 	booking.SetCreated(userLogin.Email)
 
-	bookingRepo := db.GetRepo(&uc.dbTrx, domain.Booking{})
+	bookingRepo := db.GetRepo(trx, domain.Booking{})
 	booking, err = bookingRepo.Store(ctx, booking)
 	if err != nil {
 		return uc.ErrHandler.ErrorReturn(err)
@@ -181,7 +181,7 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 	}
 	statusHistory.SetCreated(userLogin.UserReference)
 
-	histRepo := db.GetRepo(&uc.dbTrx, domain.BookingStatusHistory{})
+	histRepo := db.GetRepo(trx, domain.BookingStatusHistory{})
 	statusHistory, err = histRepo.Store(ctx, statusHistory)
 	if err != nil {
 		return uc.ErrHandler.ErrorReturn(err)
@@ -212,7 +212,7 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 	}
 	payment.SetCreated(userLogin.UserReference)
 
-	paymentRepo := db.GetRepo(&uc.dbTrx, domain.Payment{})
+	paymentRepo := db.GetRepo(trx, domain.Payment{})
 	payment, err = paymentRepo.Store(ctx, payment)
 	if err != nil {
 		return uc.ErrHandler.ErrorReturn(err)
@@ -240,7 +240,7 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 		},
 	}
 
-	paymentDetailRepo := db.GetRepo(&uc.dbTrx, domain.PaymentDetail{})
+	paymentDetailRepo := db.GetRepo(trx, domain.PaymentDetail{})
 	for _, detail := range paymentDetails {
 		detail.SetCreated(userLogin.UserReference)
 		_, err = paymentDetailRepo.Store(ctx, detail)
@@ -265,7 +265,7 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 		ChatRef: userRef,
 	}
 	user.SetID(userLogin.ID)
-	err = db.GetRepo(&uc.dbTrx, domain.UserExtended{}).UpdateSelectedCols(ctx, user, "chat_ref")
+	err = db.GetRepo(trx, domain.UserExtended{}).UpdateSelectedCols(ctx, user, "chat_ref")
 	if err != nil {
 		return uc.ErrHandler.ErrorReturn(err)
 	}
@@ -285,7 +285,7 @@ func (uc Usecase) CreateBooking(ctx context.Context, request CreateBookingReques
 	therapistUser := domain.UserAdminExtended{}
 	therapistUser.SetID(therapist.UserID)
 	therapistUser.ChatRef = therapistRef
-	err = db.GetRepo(&uc.dbTrx, domain.UserAdminExtended{}).
+	err = db.GetRepo(trx, domain.UserAdminExtended{}).
 		UpdateSelectedCols(ctx, therapistUser, "chat_ref")
 	if err != nil {
 		return uc.ErrHandler.ErrorReturn(err)
@@ -365,14 +365,18 @@ func (uc Usecase) RescheduleBooking(ctx context.Context, request RescheduleBooki
 		return response, localerror.InvalidData(constant.InvalidBookingDateTime)
 	}
 
-	uc.dbTrx.Begin()
+	trx := db.NewTransaction(uc.dbConn)
 	defer func() {
-		db.TransactionEnd(ctx, &uc.dbTrx, err)
+		if err != nil {
+			trx.End(err)
+		} else {
+			trx.End(nil)
+		}
 	}()
 
 	booking.DateTime = rescheduledAt
 	booking.SetUpdated(userLogin.Email)
-	err = db.GetRepo(&uc.dbTrx, domain.Booking{}).
+	err = db.GetRepo(trx, domain.Booking{}).
 		UpdateSelectedCols(ctx, booking, "date_time", "updated_at", "updated_by")
 	if err != nil {
 		return response, uc.ErrHandler.ErrorReturn(err)
@@ -388,7 +392,7 @@ func (uc Usecase) RescheduleBooking(ctx context.Context, request RescheduleBooki
 		Notes:     note,
 	}
 	history.SetCreated(userLogin.Email)
-	_, err = db.GetRepo(&uc.dbTrx, domain.BookingStatusHistory{}).
+	_, err = db.GetRepo(trx, domain.BookingStatusHistory{}).
 		Store(ctx, history)
 	if err != nil {
 		return response, uc.ErrHandler.ErrorReturn(err)

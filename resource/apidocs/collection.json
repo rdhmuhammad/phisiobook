@@ -7,6 +7,249 @@
   },
   "item": [
     {
+      "funIden": "userAuth",
+      "name": "Auth-user",
+      "item": [
+        {
+          "funIden": "userAuth.Register",
+          "name": "Register",
+          "request": {
+            "funIden": "",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"fullName\": \"John Doe\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth-user/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth-user",
+                "register"
+              ],
+              "query": null
+            }
+          },
+          "id": "471e2d38-bf5f-453b-a2aa-6206444a0ed1"
+        },
+        {
+          "funIden": "userAuth.LoginUser",
+          "name": "Login User",
+          "request": {
+            "funIden": "",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth-user/user/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth-user",
+                "user",
+                "login"
+              ],
+              "query": null
+            }
+          },
+          "id": "00a5b344-e7f7-4c12-9142-9cf61ef1afff"
+        },
+        {
+          "funIden": "userAuth.LogoutUser",
+          "name": "Logout User",
+          "request": {
+            "funIden": "",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth-user/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth-user",
+                "logout"
+              ],
+              "query": null
+            }
+          },
+          "id": "2bfc5cc6-134c-433a-9b67-05ee4d2a9438"
+        },
+        {
+          "funIden": "userAuth.LogoutAdmin",
+          "name": "Logout Admin",
+          "request": {
+            "funIden": "",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth-user/logout/admin",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth-user",
+                "logout",
+                "admin"
+              ],
+              "query": null
+            }
+          },
+          "id": "d8dbba0f-8aaa-43d3-9791-0d17e1c886d8"
+        },
+        {
+          "funIden": "userAuth.ResendOTP",
+          "name": "Resend O T P",
+          "request": {
+            "funIden": "",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Your OTP code is 123456\",\n  \"email\": \"john@example.com\",\n  \"name\": \"John Doe\",\n  \"subject\": \"Verify Your Account\",\n  \"userId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth-user/resend-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth-user",
+                "resend-otp"
+              ],
+              "query": null
+            }
+          },
+          "id": "f23df47c-d0ce-46b2-91a7-8fbb527c62bf"
+        },
+        {
+          "funIden": "userAuth.LoginAdmin",
+          "name": "Login Admin",
+          "request": {
+            "funIden": "",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth-user/login/admin",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth-user",
+                "login",
+                "admin"
+              ],
+              "query": null
+            }
+          },
+          "id": "f45e0b1b-53d0-43af-b616-37663c2b2322"
+        },
+        {
+          "funIden": "userAuth.LoginTherapist",
+          "name": "Login Therapist",
+          "request": {
+            "funIden": "",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth-user/login/therapist",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth-user",
+                "login",
+                "therapist"
+              ],
+              "query": null
+            }
+          },
+          "id": "69f33a4e-2f15-44ff-be16-d213b820cac3"
+        },
+        {
+          "funIden": "userAuth.VerifyAcc",
+          "name": "Verify Acc",
+          "request": {
+            "funIden": "",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"otp\": 123456\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth-user/verify-acc",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth-user",
+                "verify-acc"
+              ],
+              "query": null
+            }
+          },
+          "id": "eee53dce-3bd3-49f5-b990-fe02d146e6b5"
+        }
+      ],
+      "id": "8f5d127a-8d65-4d1e-b22e-9f3ace14fd5e"
+    },
+    {
       "funIden": "bookingRouter",
       "name": "Booking",
       "item": [
@@ -38,9 +281,11 @@
               "path": [
                 "booking",
                 "create"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "836f5fe1-6fc6-40a4-ba3b-67e3158fbaf5"
         },
         {
           "funIden": "bookingRouter.GetAdjustPrice",
@@ -63,9 +308,11 @@
                 "booking",
                 "adjust-price",
                 ":therapistCode"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "5ca9f828-f453-4aed-a695-3c97c79a94fa"
         },
         {
           "funIden": "bookingRouter.RescheduleBooking",
@@ -96,11 +343,14 @@
                 "booking",
                 "reschedule",
                 ":code"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "4357b46a-cf3a-4ef9-a96e-ba7143d0be65"
         }
-      ]
+      ],
+      "id": "70aef09d-bf7c-420c-97a4-6798afa2ef64"
     },
     {
       "funIden": "restRouter",
@@ -126,9 +376,11 @@
               "path": [
                 "chat",
                 "room"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "64aaac2d-61be-45ed-bfab-3bfd99fc9191"
         },
         {
           "funIden": "restRouter.GetCached",
@@ -158,7 +410,7 @@
                 },
                 {
                   "key": "filter",
-                  "value": "\u003cnil\u003e"
+                  "value": "<nil>"
                 },
                 {
                   "key": "roomId",
@@ -166,9 +418,11 @@
                 }
               ]
             }
-          }
+          },
+          "id": "dbf6b20a-3980-4bc4-9ab7-40a3e5e26efe"
         }
-      ]
+      ],
+      "id": "891eeab6-328a-40f5-bc2e-d7397f1aecf5"
     },
     {
       "funIden": "employeeGroup",
@@ -214,7 +468,8 @@
                 }
               ]
             }
-          }
+          },
+          "id": "10feb72e-57bd-457d-91fe-1ba1caa9b4fd"
         },
         {
           "funIden": "employeeGroup.GetOnboardingDetail",
@@ -237,9 +492,11 @@
                 "employee",
                 "onboarding",
                 ":code"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "955a3068-392a-4bc9-af32-9b96492257a2"
         },
         {
           "funIden": "employeeGroup.DeleteOnboarding",
@@ -262,11 +519,14 @@
                 "employee",
                 "onboarding",
                 ":code"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "0d93335a-c2b8-450f-8906-2caa1baca341"
         }
-      ]
+      ],
+      "id": "0b583cfb-1b1a-47a8-8340-aaecb389de0e"
     },
     {
       "funIden": "healthRoutes",
@@ -292,11 +552,14 @@
               "path": [
                 "health",
                 "status"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "c9fc70f2-c89e-4058-9b5a-4e5fe1c2e14c"
         }
-      ]
+      ],
+      "id": "9eb7da5d-9eb4-4f21-b1a1-49dbb4930765"
     },
     {
       "funIden": "historyRoutes",
@@ -342,9 +605,11 @@
                 }
               ]
             }
-          }
+          },
+          "id": "dad9cf75-c806-4074-845c-ec24e85db923"
         }
-      ]
+      ],
+      "id": "9a5da996-3af3-4c26-a63f-1c019a52b549"
     },
     {
       "funIden": "homepageRoutes",
@@ -370,9 +635,11 @@
               "path": [
                 "homepage",
                 "summary"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "6946d489-a021-4712-833a-292cdbbdf83b"
         },
         {
           "funIden": "homepageRoutes.GetCityDropdown",
@@ -394,9 +661,11 @@
               "path": [
                 "homepage",
                 "cities-dropdown"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "cabb40fa-513c-44e8-9d8d-dd19f10b8664"
         },
         {
           "funIden": "homepageRoutes.GetTherapistDropdown",
@@ -419,11 +688,14 @@
                 "homepage",
                 "therapist-dropdown",
                 ":cityId"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "76e16206-20f8-4952-b909-d66d16009a11"
         }
-      ]
+      ],
+      "id": "b6baa04a-713f-407e-81f3-54ef4e3b389c"
     },
     {
       "funIden": "serviceGroup",
@@ -449,9 +721,11 @@
               "path": [
                 "service",
                 "categories"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "26edbb3d-9497-468a-908c-2c6f58134c6e"
         },
         {
           "funIden": "serviceGroup.GetServiceDetail",
@@ -473,9 +747,11 @@
               "path": [
                 "service",
                 ":serviceId"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "30ea71e1-c8e7-4cea-a481-9a4d4028914c"
         },
         {
           "funIden": "serviceGroup.UpdateService",
@@ -505,9 +781,11 @@
               "path": [
                 "service",
                 ":serviceId"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "af57d687-8621-482e-9546-b6ef1543ebc4"
         },
         {
           "funIden": "serviceGroup.DeleteService",
@@ -529,9 +807,11 @@
               "path": [
                 "service",
                 ":serviceId"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "f30417b7-1780-406f-b18a-4ec411bec873"
         },
         {
           "funIden": "serviceGroup.CreateService",
@@ -560,9 +840,11 @@
               ],
               "path": [
                 "service"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "a2ad3e36-553b-42ea-8461-5b98530276c5"
         },
         {
           "funIden": "serviceGroup.GetServiceList",
@@ -583,11 +865,14 @@
               ],
               "path": [
                 "service"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "c1693937-903f-47b4-b098-ed6c65483d97"
         }
-      ]
+      ],
+      "id": "44f3fb57-379b-485d-9cd5-e2a8c3f164c0"
     },
     {
       "funIden": "therapistGroup",
@@ -611,7 +896,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fullName\": \"Dr. Sarah Johnson\",\n  \"email\": \"sarah@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"phone\": \"081234567890\",\n  \"profile\": \"data:image/png;base64,...\"\n}"
+              "raw": "{\n  \"email\": \"sarah@example.com\",\n  \"fullName\": \"Dr. Sarah Johnson\",\n  \"password\": \"SecurePass123!\",\n  \"phone\": \"081234567890\",\n  \"profile\": \"data:image/png;base64,...\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/therapist/register",
@@ -621,9 +906,11 @@
               "path": [
                 "therapist",
                 "register"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "4b467968-f6d6-4074-b39b-381d2f50022c"
         },
         {
           "funIden": "therapistGroup.Onboarding",
@@ -633,49 +920,17 @@
             "method": "POST",
             "header": [
               {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
                 "key": "Authorization",
                 "value": "Bearer {{token}}"
               }
             ],
             "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "ktpFile",
-                  "type": "file",
-                  "src": ""
-                },
-                {
-                  "key": "sipFile",
-                  "type": "file",
-                  "src": ""
-                },
-                {
-                  "key": "strFile",
-                  "type": "file",
-                  "src": ""
-                },
-                {
-                  "key": "ijazahFile",
-                  "type": "file",
-                  "src": ""
-                },
-                {
-                  "key": "bankCode",
-                  "value": "",
-                  "type": "text"
-                },
-                {
-                  "key": "accName",
-                  "value": "",
-                  "type": "text"
-                },
-                {
-                  "key": "accNumber",
-                  "value": "",
-                  "type": "text"
-                }
-              ]
+              "mode": "raw",
+              "raw": "{\n  \"accName\": \"\",\n  \"accNumber\": \"\",\n  \"bankCode\": \"\",\n  \"ijazahFile\": null,\n  \"ktpFile\": null,\n  \"sipFile\": null,\n  \"strFile\": null\n}"
             },
             "url": {
               "raw": "{{base_url}}/therapist/onboarding",
@@ -685,23 +940,28 @@
               "path": [
                 "therapist",
                 "onboarding"
-              ]
+              ],
+              "query": null
             }
-          }
+          },
+          "id": "d3efca47-86c4-423f-af77-d32f4cdc60d7"
         }
-      ]
+      ],
+      "id": "8b394c46-69d6-4289-8474-6badb93b806b"
     }
   ],
   "variable": [
     {
       "id": "",
       "key": "base_url",
+      "category": "BASE_URL",
       "value": "http://localhost:8999/api/v1",
       "type": ""
     },
     {
       "id": "",
       "key": "token",
+      "category": "",
       "value": "",
       "type": ""
     }

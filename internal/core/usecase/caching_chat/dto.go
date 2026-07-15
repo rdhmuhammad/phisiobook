@@ -22,9 +22,9 @@ type CachedChat struct {
 }
 
 type CacheRoomRequest struct {
-	Actor       string `json:"actor"`
-	ActorStatus bool   `json:"actorStatus"`
-	RoomID      string `json:"roomId"`
+	Actor       string `json:"actor" example:"user_001"`
+	ActorStatus bool   `json:"actorStatus" example:"true"`
+	RoomID      string `json:"roomId" example:"room_abc123"`
 }
 
 type CacheRoomResponse struct {
@@ -36,15 +36,15 @@ type CacheRoomResponse struct {
 }
 
 type CacheChatRequest struct {
-	ActorID string    `json:"actorId"`
-	Read    bool      `json:"read"`
-	ReadAt  time.Time `json:"readAt"`
-	Message string    `json:"message"`
-	RoomID  string    `json:"roomId"`
+	ActorID string    `json:"actorId" example:"user_001"`
+	Read    bool      `json:"read" example:"true"`
+	ReadAt  time.Time `json:"readAt" example:"2024-01-15T10:00:00Z"`
+	Message string    `json:"message" example:"Hello, how are you?"`
+	RoomID  string    `json:"roomId" example:"room_abc123"`
 }
 
 type GetCachedRequest struct {
-	RoomId  string `bindQuery:"dataType=string" json:"roomId"`
+	RoomId  string `bindQuery:"dataType=string" json:"roomId" example:"room_abc123"`
 	ActorId string
 	Filter  *payload.GetListQueryNoPeriod `bindQuery:"dive=true"`
 }

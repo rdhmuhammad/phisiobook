@@ -1,15 +1,15 @@
 package registration
 
 type RegisterRequest struct {
-	FullName string `json:"fullName" binding:"required"`
-	Email    string `json:"email" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	FullName string `json:"fullName" binding:"required" example:"John Doe"`
+	Email    string `json:"email" binding:"required" example:"john@example.com"`
+	Password string `json:"password" binding:"required" example:"SecurePass123!"`
 }
 
 type LoginRequest struct {
-	Email    string `json:"email" binding:"required"`
-	Password string `json:"password" binding:"required"`
-	Timezone string `json:"timezone"`
+	Email    string `json:"email" binding:"required" example:"john@example.com"`
+	Password string `json:"password" binding:"required" example:"SecurePass123!"`
+	Timezone string `json:"timezone" example:"Asia/Jakarta"`
 	Role     string `json:"-"`
 }
 
@@ -26,11 +26,11 @@ type LoginResponse struct {
 }
 
 type SendOtpRequest struct {
-	Email   string `json:"email"`
-	Name    string `json:"name"`
-	Content string `json:"content"`
-	Subject string `json:"subject"`
-	UserID  uint64 `json:"userId" validate:"numeric"`
+	Email   string `json:"email" example:"john@example.com"`
+	Name    string `json:"name" example:"John Doe"`
+	Content string `json:"content" example:"Your OTP code is 123456"`
+	Subject string `json:"subject" example:"Verify Your Account"`
+	UserID  uint64 `json:"userId" validate:"numeric" example:"1"`
 }
 
 type SendOtpResponse struct {
@@ -38,8 +38,8 @@ type SendOtpResponse struct {
 }
 
 type VerifyAccRequest struct {
-	Email string `json:"email"`
-	Otp   int32  `json:"otp"`
+	Email string `json:"email" example:"john@example.com"`
+	Otp   int32  `json:"otp" example:"123456"`
 }
 
 type VerifyAccResponse struct {

@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"flag"
@@ -41,6 +41,8 @@ func main() {
 			controller.NewHistoryController(conn.Db, ctrl, port),
 			controller.NewBookingController(conn.Db, conn.MongoDb, port, ctrl),
 			controller.NewServiceController(conn.Db, port, ctrl),
+			controller.NewTherapistController(conn.Db, port, ctrl),
+			controller.NewEmployeeController(conn.Db, port, ctrl),
 		}
 	})
 
@@ -56,3 +58,5 @@ func main() {
 	}
 
 }
+
+

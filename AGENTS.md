@@ -171,6 +171,75 @@ The app supports multiple languages using go-i18n:
 5. Create router implementing `Router` interface
 6. Register router in `pkg/api/default.go`
 
+### Goroutine usage for Palarel calls
+```go
+  import "golang.org/x/sync/errgroup"
+
+  // No data assertion
+  g, ctx := errgroup.WithContext(context.Background())
+
+  g.Go(func() error { return featureA(ctx) })
+  g.Go(func() error { return featureB(ctx) })
+  g.Go(func() error { return featureC(ctx) }) // works with any number
+
+  if err := g.Wait(); err != nil {
+      // handle first error (ctx is already cancelled for others)
+  }
+
+  // With data assertion to array or map
+  import (
+      "context"
+      "sync"
+      "golang.org/x/sync/errgroup"
+  )
+
+  var mu sync.Mutex
+  results := make(map[string]any)
+
+  g, ctx := errgroup.WithContext(context.Background())
+
+  g.Go(func() error {
+      data, err := featureA(ctx)
+      if err != nil {
+          return err
+      }
+      mu.Lock()
+      results["a"] = data
+      mu.Unlock()
+      return nil
+  })
+
+  g.Go(func() error {
+      data, err := featureB(ctx)
+      if err != nil {
+          return err
+      }
+      mu.Lock()
+      results["b"] = data
+      mu.Unlock()
+      return nil
+  })
+
+  g.Go(func() error {
+      data, err := featureC(ctx)
+      if err != nil {
+          return err
+      }
+      mu.Lock()
+      results["c"] = data
+      mu.Unlock()
+      return nil
+  })
+
+  if err := g.Wait(); err != nil {
+      return nil, err
+  }
+
+  return results, nil
+  
+```
+
+
 ### Database Queries
 
 Use the generic repository's expression builders:
@@ -187,15 +256,43 @@ db.ExpressionDateRange(startDate, endDate, "created_at", "table_name")
 // Array operations
 db.InArray([]string{"active", "pending"}, "status")
 ```
+### Query Selected field
+1. Create struct at dto of the usecase folder.
+2. Define the column name of each field with `gorm:"column:xxx"`
+3. Use the struct like this;
+   ``` go
+   var userInfo UserInfo
+   if err = userRepo.FindOneByExpSelection(ctx, &userInfo, db.Query(...)); err != nil{
+      return ...
+   }
+   
+   ```
+4. the repos all contains keyword selection
 
 ### Working with Transactions
 
-Use `pkg/db/dbTransaction.go` for transaction management:
+Use `pkg/db/dbTransaction.go` for transaction management, inside usecase method:
 ```go
-err := WithTransaction(ctx, func(tx *gorm.DB) error {
-    // Your transactional operations
-    return nil
-})
+...
+var trx = db.NewTransaction(uc.dbConn)
+var err error
+defer func() {
+	if err != nil {
+		trx.End(err)
+	} else {
+		trx.End(nil)
+	}
+}()
+
+...
+
+orderRepo := db.GetRepo(trx, entity.Order{})
+order, err = orderRepo.Store(ctx, order)
+if err != nil {
+	return uc.ErrHandler.ErrorReturn(err)
+}
+
+...
 ```
 
 ### Adding Middleware
@@ -236,3 +333,16 @@ If i want to create new feature, i had to start with sentence NEW FEATURE => {in
 - The app uses UTC timezone for database operations (`parseTime=True&loc=UTC`)
 - Column selection queries use GORM tags to map struct fields
 - User activity tracking happens automatically on authenticated requests
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

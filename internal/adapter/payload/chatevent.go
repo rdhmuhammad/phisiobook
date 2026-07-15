@@ -7,7 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/goccy/go-json"
+	"encoding/json"
+
 	"github.com/rdhmuhammad/phisiobook/pkg/logger"
 )
 

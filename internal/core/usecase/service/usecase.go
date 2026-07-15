@@ -48,15 +48,15 @@ func (uc Usecase) CreateService(ctx context.Context, request CreateServiceReques
 		return ServiceDetailResponse{}, localerror.InvalidDataError{Msg: "Category not found"}
 	}
 
-	// Start transaction
-	tx := uc.dbConn.Begin()
+	trx := db.NewTransaction(uc.dbConn)
 	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
+		if err != nil {
+			trx.End(err)
+		} else {
+			trx.End(nil)
 		}
 	}()
 
-	// Create service
 	service := domain.Service{
 		Name:        request.Name,
 		CategoryID:  request.CategoryID,
@@ -67,16 +67,14 @@ func (uc Usecase) CreateService(ctx context.Context, request CreateServiceReques
 	}
 	service.SetCreated(userLogin.Email)
 
-	serviceRepo := db.NewGenericeRepo(tx, domain.Service{})
+	serviceRepo := db.GetRepo(trx, domain.Service{})
 	service, err = serviceRepo.Store(ctx, service)
 	if err != nil {
-		tx.Rollback()
 		return ServiceDetailResponse{}, err
 	}
 
-	// Create service areas
 	if len(request.CityIDs) > 0 {
-		serviceAreaRepo := db.NewGenericeRepo(tx, domain.ServiceArea{})
+		serviceAreaRepo := db.GetRepo(trx, domain.ServiceArea{})
 		for _, cityID := range request.CityIDs {
 			area := domain.ServiceArea{
 				ServiceID: service.ID,
@@ -85,15 +83,13 @@ func (uc Usecase) CreateService(ctx context.Context, request CreateServiceReques
 			area.SetCreated(userLogin.Email)
 			_, err = serviceAreaRepo.Store(ctx, area)
 			if err != nil {
-				tx.Rollback()
 				return ServiceDetailResponse{}, err
 			}
 		}
 	}
 
-	// Create included items
 	if len(request.IncludedItems) > 0 {
-		includedItemRepo := db.NewGenericeRepo(tx, domain.ServiceIncludedItem{})
+		includedItemRepo := db.GetRepo(trx, domain.ServiceIncludedItem{})
 		for _, itemName := range request.IncludedItems {
 			item := domain.ServiceIncludedItem{
 				ServiceID: service.ID,
@@ -102,14 +98,9 @@ func (uc Usecase) CreateService(ctx context.Context, request CreateServiceReques
 			item.SetCreated(userLogin.Email)
 			_, err = includedItemRepo.Store(ctx, item)
 			if err != nil {
-				tx.Rollback()
 				return ServiceDetailResponse{}, err
 			}
 		}
-	}
-
-	if err = tx.Commit().Error; err != nil {
-		return ServiceDetailResponse{}, err
 	}
 
 	// Fetch the created service with relations
@@ -136,15 +127,15 @@ func (uc Usecase) UpdateService(ctx context.Context, request UpdateServiceReques
 		return ServiceDetailResponse{}, localerror.InvalidDataError{Msg: "Category not found"}
 	}
 
-	// Start transaction
-	tx := uc.dbConn.Begin()
+	trx := db.NewTransaction(uc.dbConn)
 	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
+		if err != nil {
+			trx.End(err)
+		} else {
+			trx.End(nil)
 		}
 	}()
 
-	// Update service
 	existingService.Name = request.Name
 	existingService.CategoryID = request.CategoryID
 	existingService.Description = request.Description
@@ -153,18 +144,15 @@ func (uc Usecase) UpdateService(ctx context.Context, request UpdateServiceReques
 	existingService.Commission = request.Commission
 	existingService.SetUpdated(userLogin.Email)
 
-	serviceRepo := db.NewGenericeRepo(tx, domain.Service{})
+	serviceRepo := db.GetRepo(trx, domain.Service{})
 	err = serviceRepo.Update(ctx, existingService)
 	if err != nil {
-		tx.Rollback()
 		return ServiceDetailResponse{}, err
 	}
 
-	// Delete existing service areas and create new ones
-	serviceAreaRepo := db.NewGenericeRepo(tx, domain.ServiceArea{})
+	serviceAreaRepo := db.GetRepo(trx, domain.ServiceArea{})
 	err = serviceAreaRepo.DeleteByExpression(ctx, db.Query(db.Equal(request.ID, "service_id")))
 	if err != nil {
-		tx.Rollback()
 		return ServiceDetailResponse{}, err
 	}
 
@@ -177,17 +165,14 @@ func (uc Usecase) UpdateService(ctx context.Context, request UpdateServiceReques
 			area.SetCreated(userLogin.Email)
 			_, err = serviceAreaRepo.Store(ctx, area)
 			if err != nil {
-				tx.Rollback()
 				return ServiceDetailResponse{}, err
 			}
 		}
 	}
 
-	// Delete existing included items and create new ones
-	includedItemRepo := db.NewGenericeRepo(tx, domain.ServiceIncludedItem{})
+	includedItemRepo := db.GetRepo(trx, domain.ServiceIncludedItem{})
 	err = includedItemRepo.DeleteByExpression(ctx, db.Query(db.Equal(request.ID, "service_id")))
 	if err != nil {
-		tx.Rollback()
 		return ServiceDetailResponse{}, err
 	}
 
@@ -200,14 +185,9 @@ func (uc Usecase) UpdateService(ctx context.Context, request UpdateServiceReques
 			item.SetCreated(userLogin.Email)
 			_, err = includedItemRepo.Store(ctx, item)
 			if err != nil {
-				tx.Rollback()
 				return ServiceDetailResponse{}, err
 			}
 		}
-	}
-
-	if err = tx.Commit().Error; err != nil {
-		return ServiceDetailResponse{}, err
 	}
 
 	// Fetch the updated service with relations

@@ -1,4 +1,4 @@
-SET NAMES utf8mb4;
+﻿SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 CREATE TABLE IF NOT EXISTS `master_roles` (
@@ -292,6 +292,57 @@ CREATE TABLE IF NOT EXISTS `summary_homepage` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `therapist_documents` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `therapist_id` BIGINT UNSIGNED NOT NULL,
+  `ktp_doc` TEXT NULL,
+  `str_doc` TEXT NULL,
+  `sip_doc` TEXT NULL,
+  `bank_name` VARCHAR(100) NULL DEFAULT NULL,
+  `bank_code` VARCHAR(50) NULL DEFAULT NULL,
+  `acc_name` VARCHAR(255) NULL DEFAULT NULL,
+  `acc_number` VARCHAR(50) NULL DEFAULT NULL,
+  `created_at` DATETIME(3) NULL DEFAULT NULL,
+  `updated_at` DATETIME(3) NULL DEFAULT NULL,
+  `created_by` VARCHAR(100) NULL DEFAULT NULL,
+  `updated_by` VARCHAR(100) NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_therapist_documents_therapist_id` (`therapist_id`),
+  CONSTRAINT `fk_therapist_documents_therapist_id` FOREIGN KEY (`therapist_id`) REFERENCES `therapists` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE `therapist_documents` ADD COLUMN `ijazah_doc` TEXT NULL AFTER `sip_doc`;
+
+CREATE TABLE IF NOT EXISTS `onboarding_approvals`
+ALTER TABLE `onboarding_approvals` ADD COLUMN `code` VARCHAR(100) NULL AFTER `id`; (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `therapist_id` BIGINT UNSIGNED NOT NULL,
+  `latest_status` VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+  `latest_reason` TEXT NULL,
+  `approval_by_id` BIGINT UNSIGNED NULL DEFAULT NULL,
+  `created_at` DATETIME(3) NULL DEFAULT NULL,
+  `updated_at` DATETIME(3) NULL DEFAULT NULL,
+  `created_by` VARCHAR(100) NULL DEFAULT NULL,
+  `updated_by` VARCHAR(100) NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_onboarding_approvals_therapist_id` (`therapist_id`),
+  CONSTRAINT `fk_onboarding_approvals_therapist_id` FOREIGN KEY (`therapist_id`) REFERENCES `therapists` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `onboarding_approval_hist` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `approval_id` BIGINT UNSIGNED NOT NULL,
+  `status` VARCHAR(50) NOT NULL,
+  `reason` TEXT NULL,
+  `created_at` DATETIME(3) NULL DEFAULT NULL,
+  `updated_at` DATETIME(3) NULL DEFAULT NULL,
+  `created_by` VARCHAR(100) NULL DEFAULT NULL,
+  `updated_by` VARCHAR(100) NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_onboarding_approval_hist_approval_id` (`approval_id`),
+  CONSTRAINT `fk_onboarding_approval_hist_approval_id` FOREIGN KEY (`approval_id`) REFERENCES `onboarding_approvals` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 INSERT INTO `master_roles` (`id`, `name`, `label`, `created_at`, `updated_at`, `created_by`, `updated_by`) VALUES
@@ -382,3 +433,6 @@ ON DUPLICATE KEY UPDATE
   `rating` = VALUES(`rating`),
   `updated_at` = CURRENT_TIMESTAMP(3),
   `updated_by` = 'system';
+
+
+

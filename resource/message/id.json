@@ -39,4 +39,10 @@
   "SettingIsNotSet": "Pengaturan harga belum di sesuaikan",
   "RegisterTherapist": "Berhasil mendaftarkan terapis",
   "TherapistEmailUsed": "Email sudah digunakan",
+  "OnboardingSuccess": "Onboarding berhasil dikirim",
+  "TherapistNotFound": "Terapis tidak ditemukan",
+  "GetOnboardingList": "Berhasil mendapatkan daftar onboarding",
+  "GetOnboardingDetail": "Berhasil mendapatkan detail onboarding",
+  "DeleteOnboarding": "Berhasil menghapus onboarding",
+  "OnboardingNotFound": "Onboarding tidak ditemukan"
 }

@@ -50,8 +50,18 @@ const (
 	DropdownTherapistSuccess
 	DropdownCitySuccess
 	SettingIsNotSet
-)
 
 	// therapist
 	RegisterTherapist
 	TherapistEmailUsed
+
+	// onboarding
+	OnboardingSuccess
+	TherapistNotFound
+
+	// employee
+	GetOnboardingList
+	GetOnboardingDetail
+	DeleteOnboarding
+	OnboardingNotFound
+)

@@ -1,3 +1,5 @@
+//go:generate apigen
+
 package controller
 
 import (

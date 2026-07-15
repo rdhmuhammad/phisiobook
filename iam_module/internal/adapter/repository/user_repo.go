@@ -16,8 +16,8 @@ type userRepo struct {
 
 type UserListQuery struct {
 	Filter    *payload.GetListQueryNoPeriod `bindQuery:"dive=true" json:"filter"`
-	RoleName  string                        `json:"roleName"`
-	StatusKey string                        `json:"statusKey"`
+	RoleName  string                        `json:"roleName" example:"USER"`
+	StatusKey string                        `json:"statusKey" example:"active"`
 }
 
 func NewUserRepo(db *gorm.DB) UserRepo {

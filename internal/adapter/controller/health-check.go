@@ -1,4 +1,4 @@
-//go:generate go run ../../../apitest_module/shared/runner.go
+//go:generate apigen
 
 package controller
 

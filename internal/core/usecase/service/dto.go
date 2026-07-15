@@ -6,27 +6,27 @@ import (
 
 // CreateServiceRequest represents the request body for creating a service
 type CreateServiceRequest struct {
-	Name          string   `json:"name" binding:"required"`
-	CategoryID    uint     `json:"categoryId" binding:"required"`
-	Description   string   `json:"description"`
-	Duration      int      `json:"duration" binding:"required,min=1"`
-	Price         float64  `json:"price" binding:"required,min=0"`
-	Commission    float64  `json:"commission" binding:"required,min=0,max=100"`
-	CityIDs       []uint   `json:"cityIds"`
-	IncludedItems []string `json:"includedItems"`
+	Name          string   `json:"name" binding:"required" example:"Massage Therapy"`
+	CategoryID    uint     `json:"categoryId" binding:"required" example:"1"`
+	Description   string   `json:"description" example:"Relaxing full body massage"`
+	Duration      int      `json:"duration" binding:"required,min=1" example:"60"`
+	Price         float64  `json:"price" binding:"required,min=0" example:"150000"`
+	Commission    float64  `json:"commission" binding:"required,min=0,max=100" example:"10"`
+	CityIDs       []uint   `json:"cityIds" example:"[1, 2]"`
+	IncludedItems []string `json:"includedItems" example:"[\"Towel\", \"Oil\"]"`
 }
 
 // UpdateServiceRequest represents the request body for updating a service
 type UpdateServiceRequest struct {
 	ID            uint
-	Name          string   `json:"name" binding:"required"`
-	CategoryID    uint     `json:"categoryId" binding:"required"`
-	Description   string   `json:"description"`
-	Duration      int      `json:"duration" binding:"required,min=1"`
-	Price         float64  `json:"price" binding:"required,min=0"`
-	Commission    float64  `json:"commission" binding:"required,min=0,max=100"`
-	CityIDs       []uint   `json:"cityIds"`
-	IncludedItems []string `json:"includedItems"`
+	Name          string   `json:"name" binding:"required" example:"Massage Therapy"`
+	CategoryID    uint     `json:"categoryId" binding:"required" example:"1"`
+	Description   string   `json:"description" example:"Relaxing full body massage"`
+	Duration      int      `json:"duration" binding:"required,min=1" example:"60"`
+	Price         float64  `json:"price" binding:"required,min=0" example:"150000"`
+	Commission    float64  `json:"commission" binding:"required,min=0,max=100" example:"10"`
+	CityIDs       []uint   `json:"cityIds" example:"[1, 2]"`
+	IncludedItems []string `json:"includedItems" example:"[\"Towel\", \"Oil\"]"`
 }
 
 // ServiceListItem represents a single service in the list response

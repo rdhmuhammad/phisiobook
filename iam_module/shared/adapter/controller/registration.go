@@ -1,3 +1,5 @@
+//go:generate apigen
+
 package controller
 
 import (
@@ -53,6 +55,26 @@ func (ctrl AuthController) Login(c *gin.Context, role string) {
 	ctrl.Mapper.NewResponse(c, payload.NewSuccessResponse(result, constant2.LoginSuccess.String()), err)
 }
 
+func (ctrl AuthController) LoginUser(c *gin.Context) {
+	ctrl.Login(c, constant.ContextMobile)
+}
+
+func (ctrl AuthController) LoginAdmin(c *gin.Context) {
+	ctrl.Login(c, constant.ContextDashboard)
+}
+
+func (ctrl AuthController) LoginTherapist(c *gin.Context) {
+	ctrl.Login(c, constant.ContextTherapist)
+}
+
+func (ctrl AuthController) LogoutUser(c *gin.Context) {
+	ctrl.Logout(c, constant.ContextMobile)
+}
+
+func (ctrl AuthController) LogoutAdmin(c *gin.Context) {
+	ctrl.Logout(c, constant.ContextDashboard)
+}
+
 func (ctrl AuthController) Register(c *gin.Context) {
 	var request registration.RegisterRequest
 	if errs := ctrl.Enigma.BindAndValidate(c, &request); len(errs) > 0 {
@@ -87,6 +109,7 @@ func (ctrl AuthController) ResendOTP(c *gin.Context) {
 
 func (ctrl AuthController) Route(router *gin.RouterGroup) {
 	userAuth := router.Group("/auth-user")
+
 	userAuth.POST("/register",
 		ctrl.Idem.Idempotent(
 			"/register",
@@ -96,45 +119,27 @@ func (ctrl AuthController) Route(router *gin.RouterGroup) {
 		ctrl.Register,
 	)
 
-	userAuth.POST("/user/login",
-		func(c *gin.Context) {
-			ctrl.Login(c, constant.ContextMobile)
-		},
-	)
+	userAuth.POST("/user/login", ctrl.LoginUser)
 
-	userAuth.POST("/login/admin",
-		func(c *gin.Context) {
-			ctrl.Login(c, constant.ContextDashboard)
-		},
-	)
+	userAuth.POST("/login/admin", ctrl.LoginAdmin)
 
-	userAuth.POST("/login/therapist",
-		func(c *gin.Context) {
-			ctrl.Login(c, constant.ContextTherapist)
-		},
-	)
+	userAuth.POST("/login/therapist", ctrl.LoginTherapist)
 
 	userAuth.POST("/logout",
 		ctrl.Security.Validate(),
 		ctrl.Security.Authorize(constant.RoleIsAdmin, constant.RoleIsUser),
-		func(c *gin.Context) {
-			ctrl.Logout(c, constant.ContextMobile)
-		})
+		ctrl.LogoutUser,
+	)
 
 	userAuth.POST("/logout/admin",
 		ctrl.Security.Validate(),
 		ctrl.Security.Authorize(constant.RolesIsMobile),
-		func(c *gin.Context) {
-			ctrl.Logout(c, constant.ContextDashboard)
-		})
-
-	userAuth.POST(
-		"/verify-acc",
-		ctrl.VerifyAcc,
+		ctrl.LogoutAdmin,
 	)
 
-	userAuth.POST(
-		"/resend-otp",
+	userAuth.POST("/verify-acc", ctrl.VerifyAcc)
+
+	userAuth.POST("/resend-otp",
 		ctrl.Idem.Idempotent(
 			"/resend-otp",
 			"username",

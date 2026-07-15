@@ -25,7 +25,7 @@ type UserVisitedDestDetail struct {
 }
 
 type UserVisitedDestQuery struct {
-	UserID uint                          `bindQuery:"dataType=bigint" json:"userId"`
+	UserID uint                          `bindQuery:"dataType=bigint" json:"userId" example:"1"`
 	Filter *payload.GetListQueryNoPeriod `bindQuery:"dive=true" json:"filter"`
 }
 
@@ -49,11 +49,11 @@ func DefaultUserDetailItem(item domain.UserEntityInterface) UserDetailItem {
 
 type CreateUserRequest struct {
 	ID        uint
-	FullName  string `json:"fullName"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	RoleId    uint   `json:"roleId"`
-	StatusKey string `json:"statusKey"`
+	FullName  string `json:"fullName" example:"Jane Smith"`
+	Email     string `json:"email" example:"jane@example.com"`
+	Password  string `json:"password" example:"SecurePass123!"`
+	RoleId    uint   `json:"roleId" example:"1"`
+	StatusKey string `json:"statusKey" example:"active"`
 }
 
 // ===================== USER MOBILE ======================
@@ -73,7 +73,7 @@ type ProfileLang struct {
 }
 
 type UpdateUserLangRequest struct {
-	Lang string `json:"lang"`
+	Lang string `json:"lang" example:"en"`
 }
 
 type UserSubscription struct {
@@ -83,8 +83,8 @@ type UserSubscription struct {
 }
 
 type NotifyNearestRequest struct {
-	UserLongitude float64 `bindQuery:"dataType=float" json:"userLongitude"`
-	UserLatitude  float64 `bindQuery:"dataType=float" json:"userLatitude"`
+	UserLongitude float64 `bindQuery:"dataType=float" json:"userLongitude" example:"106.8456"`
+	UserLatitude  float64 `bindQuery:"dataType=float" json:"userLatitude" example:"-6.2088"`
 }
 
 type NearestDestItem struct {

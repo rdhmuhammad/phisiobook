@@ -39,4 +39,10 @@
   "SettingIsNotSet": "Price setting is not set yet",
   "RegisterTherapist": "Register therapist success",
   "TherapistEmailUsed": "Email is already used",
+  "OnboardingSuccess": "Onboarding submitted successfully",
+  "TherapistNotFound": "Therapist not found",
+  "GetOnboardingList": "Success retrieve onboarding list",
+  "GetOnboardingDetail": "Success retrieve onboarding detail",
+  "DeleteOnboarding": "Onboarding deleted successfully",
+  "OnboardingNotFound": "Onboarding not found"
 }

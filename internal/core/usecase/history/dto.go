@@ -18,10 +18,10 @@ const (
 )
 
 type GetBookingHistoryRequest struct {
-	PerPage int    `bindQuery:"dataType=integer" json:"perPage"`
-	Page    int    `bindQuery:"dataType=integer" json:"page"`
-	Search  string `json:"search"`
-	Status  string `bindQuery:"dataType=string" json:"status"`
+	PerPage int    `bindQuery:"dataType=integer" json:"perPage" example:"10"`
+	Page    int    `bindQuery:"dataType=integer" json:"page" example:"1"`
+	Search  string `json:"search" example:"BOOK-ABC"`
+	Status  string `bindQuery:"dataType=string" json:"status" example:"upcoming"`
 }
 
 func (r *GetBookingHistoryRequest) SetIfEmpty() {
