@@ -11,3 +11,7 @@ resource/docker/mongodb/data/
 resource/docker/redis/data/
 .tmp-reg-tests
 bin/
+
+# AI AGENT
+graphify-out
+.opencode

@@ -25,12 +25,12 @@
               "raw": "{\n  \"fullName\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"+1234567890\",\n  \"password\": \"SecurePassword123!\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/auth/register",
+              "raw": "{{base_url}}/auth-user/register",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "auth",
+                "auth-user",
                 "register"
               ]
             },
@@ -69,12 +69,13 @@
               "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/auth/login",
+              "raw": "{{base_url}}/auth-user/user/login",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "auth",
+                "auth-user",
+                "user",
                 "login"
               ]
             },
@@ -93,44 +94,16 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/auth/logout",
+              "raw": "{{base_url}}/auth-user/logout",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "auth",
+                "auth-user",
                 "logout"
               ]
             },
             "description": "Logout user (requires authentication)"
-          },
-          "response": []
-        },
-        {
-          "name": "Employee Register",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"fullName\": \"Jane Smith\",\n  \"email\": \"jane.smith@phisiobook.com\",\n  \"phone\": \"+1234567891\",\n  \"password\": \"SecurePassword123!\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/employee/register",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "employee",
-                "register"
-              ]
-            },
-            "description": "Register a new employee/therapist account"
           },
           "response": []
         },
@@ -165,12 +138,12 @@
               "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePassword123!\"\n}\n"
             },
             "url": {
-              "raw": "{{base_url}}/auth/login/admin",
+              "raw": "{{base_url}}/auth-user/login/admin",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "auth",
+                "auth-user",
                 "login",
                 "admin"
               ]
@@ -190,13 +163,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/employee/logout",
+              "raw": "{{base_url}}/auth-user/logout/admin",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "employee",
-                "logout"
+                "auth-user",
+                "logout",
+                "admin"
               ]
             },
             "description": "Logout employee (requires authentication)"
@@ -308,6 +282,51 @@
             "description": "Get homepage summary data"
           },
           "response": []
+        },
+        {
+          "name": "Cities Dropdown",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/homepage/cities-dropdown",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "homepage",
+                "cities-dropdown"
+              ]
+            },
+            "description": "Get list of cities for dropdown selection"
+          },
+          "response": []
+        },
+        {
+          "name": "Therapist Dropdown",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/homepage/therapist-dropdown/:cityId",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "homepage",
+                "therapist-dropdown",
+                ":cityId"
+              ],
+              "variable": [
+                {
+                  "key": "cityId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get list of therapists by city for dropdown selection"
+          },
+          "response": []
         }
       ],
       "description": "Homepage related endpoints"
@@ -364,24 +383,6 @@
       "name": "Booking",
       "item": [
         {
-          "name": "Dropdown City",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/booking/dropdown-cities",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "booking",
-                "dropdown-cities"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
           "name": "Get Adjust Price",
           "request": {
             "method": "GET",
@@ -434,31 +435,6 @@
                 {
                   "key": "bookingCode",
                   "value": ""
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Dropdown Therapist",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/booking/dropdown-therapist/:cityId",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "booking",
-                "dropdown-therapist",
-                ":cityId"
-              ],
-              "variable": [
-                {
-                  "key": "cityId",
-                  "value": "1"
                 }
               ]
             }
