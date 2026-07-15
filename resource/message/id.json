@@ -36,5 +36,7 @@
   "BookingNotActive": "Sesi booking tidak aktif",
   "InvalidBookingDateTime": "Waktu booking tidak valid",
   "RescheduleBookingSuccess": "Berhasil menjadwalkan ulang booking",
-  "SettingIsNotSet": "Pengaturan harga belum di sesuaikan"
+  "SettingIsNotSet": "Pengaturan harga belum di sesuaikan",
+  "RegisterTherapist": "Berhasil mendaftarkan terapis",
+  "TherapistEmailUsed": "Email sudah digunakan",
 }

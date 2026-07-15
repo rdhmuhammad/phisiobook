@@ -142,6 +142,23 @@ func (u Usecase) Login(ctx context.Context, request LoginRequest) (LoginResponse
 		user = &data
 		userAdmin = data
 		break
+	case constant.ContextTherapist:
+		data, err := u.userAdminRepo.FindOneByExpressionAndJoin(
+			ctx,
+			[]clause.Expression{db.Equal(request.Email, "email")},
+			[]string{"Role"}, nil)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return LoginResponse{}, localerror.InvalidData(constant2.LoginPasswordMismatch.String())
+			}
+			return LoginResponse{}, err
+		}
+		if data.Role.Name != constant.ContextTherapist {
+			return LoginResponse{}, localerror.InvalidData(constant2.LoginPasswordMismatch.String())
+		}
+		user = &data
+		userAdmin = data
+		break
 	}
 
 	if rawPas, err := u.Davinci.DecryptMessage([]byte(u.Env.Get("ENCRYPT_MESSAGE_PASSWORD")), user.GetPassword()); err != nil {

@@ -1,4 +1,4 @@
-package domain
+﻿package domain
 
 type MasterRole struct {
 	BaseEntity

@@ -51,3 +51,7 @@ const (
 	DropdownCitySuccess
 	SettingIsNotSet
 )
+
+	// therapist
+	RegisterTherapist
+	TherapistEmailUsed

@@ -36,5 +36,7 @@
   "BookingNotActive": "Booking session is not active",
   "InvalidBookingDateTime": "Booking date time is invalid",
   "RescheduleBookingSuccess": "Reschedule booking success",
-  "SettingIsNotSet": "Price setting is not set yet"
+  "SettingIsNotSet": "Price setting is not set yet",
+  "RegisterTherapist": "Register therapist success",
+  "TherapistEmailUsed": "Email is already used",
 }

@@ -3,8 +3,9 @@ package constant
 import "strings"
 
 const (
-	ContextDashboard = "DASHBOARD"
-	ContextMobile    = "MOBILE"
+	ContextDashboard  = "DASHBOARD"
+	ContextMobile     = "MOBILE"
+	ContextTherapist  = "THERAPIST"
 
 	CacheKeyOTP   = "KEY_OTP_"
 	CacheKeyLogin = "USER_LOGIN_"

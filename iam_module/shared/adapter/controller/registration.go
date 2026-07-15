@@ -108,6 +108,12 @@ func (ctrl AuthController) Route(router *gin.RouterGroup) {
 		},
 	)
 
+	userAuth.POST("/login/therapist",
+		func(c *gin.Context) {
+			ctrl.Login(c, constant.ContextTherapist)
+		},
+	)
+
 	userAuth.POST("/logout",
 		ctrl.Security.Validate(),
 		ctrl.Security.Authorize(constant.RoleIsAdmin, constant.RoleIsUser),
