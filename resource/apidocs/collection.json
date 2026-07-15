@@ -3,457 +3,32 @@
     "_postman_id": "126ea653-15ff-430b-abae-f21d7aebc109",
     "name": "Phisiobook API",
     "description": "Complete API collection for Phisiobook backend",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "30434881"
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Auth",
-      "item": [
-        {
-          "name": "User Register",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"fullName\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"+1234567890\",\n  \"password\": \"SecurePassword123!\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth-user/register",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth-user",
-                "register"
-              ]
-            },
-            "description": "Register a new user account"
-          },
-          "response": []
-        },
-        {
-          "name": "User Login",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var jsonData = pm.response.json();",
-                  "if (jsonData.data && jsonData.data.token) {",
-                  "    pm.collectionVariables.set(\"token\", jsonData.data.token);",
-                  "}"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth-user/user/login",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth-user",
-                "user",
-                "login"
-              ]
-            },
-            "description": "Login for mobile/user application"
-          },
-          "response": []
-        },
-        {
-          "name": "User Logout",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/auth-user/logout",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth-user",
-                "logout"
-              ]
-            },
-            "description": "Logout user (requires authentication)"
-          },
-          "response": []
-        },
-        {
-          "name": "Employee Login",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var jsonData = pm.response.json();",
-                  "if (jsonData.data && jsonData.data.token) {",
-                  "    pm.collectionVariables.set(\"token\", jsonData.data.token);",
-                  "}"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePassword123!\"\n}\n"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth-user/login/admin",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth-user",
-                "login",
-                "admin"
-              ]
-            },
-            "description": "Login for dashboard/employee application"
-          },
-          "response": []
-        },
-        {
-          "name": "Employee Logout",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/auth-user/logout/admin",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth-user",
-                "logout",
-                "admin"
-              ]
-            },
-            "description": "Logout employee (requires authentication)"
-          },
-          "response": []
-        },
-        {
-          "name": "Verify Account",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"otp\": 123456\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth-user/verify-acc",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth-user",
-                "verify-acc"
-              ]
-            },
-            "description": "Verify account using OTP sent to email"
-          },
-          "response": []
-        },
-        {
-          "name": "Resend OTP",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"name\": \"John Doe\",\n  \"content\": \"\",\n  \"subject\": \"Verify Your Account\",\n  \"userId\": 1\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth-user/resend-otp",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth-user",
-                "resend-otp"
-              ]
-            },
-            "description": "Resend OTP verification code to email"
-          },
-          "response": []
-        }
-      ],
-      "description": "Authentication and user management endpoints"
-    },
-    {
-      "name": "Health",
-      "item": [
-        {
-          "name": "Health Check",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/health/status",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "health",
-                "status"
-              ]
-            },
-            "description": "Check system health status including database, cache, and storage connections"
-          },
-          "response": []
-        }
-      ],
-      "description": "System health check endpoints"
-    },
-    {
-      "name": "Homepage",
-      "item": [
-        {
-          "name": "Get Summary Home",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/homepage/summary",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "homepage",
-                "summary"
-              ]
-            },
-            "description": "Get homepage summary data"
-          },
-          "response": []
-        },
-        {
-          "name": "Cities Dropdown",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/homepage/cities-dropdown",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "homepage",
-                "cities-dropdown"
-              ]
-            },
-            "description": "Get list of cities for dropdown selection"
-          },
-          "response": []
-        },
-        {
-          "name": "Therapist Dropdown",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/homepage/therapist-dropdown/:cityId",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "homepage",
-                "therapist-dropdown",
-                ":cityId"
-              ],
-              "variable": [
-                {
-                  "key": "cityId",
-                  "value": "1"
-                }
-              ]
-            },
-            "description": "Get list of therapists by city for dropdown selection"
-          },
-          "response": []
-        }
-      ],
-      "description": "Homepage related endpoints"
-    },
-    {
-      "name": "Chat",
-      "item": [
-        {
-          "name": "Chat Room",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/chat/room",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "chat",
-                "room"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Chat History",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/chat/history?roomId=bgyq9r",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "chat",
-                "history"
-              ],
-              "query": [
-                {
-                  "key": "roomId",
-                  "value": "bgyq9r"
-                }
-              ]
-            }
-          },
-          "response": []
-        }
-      ],
-      "description": "Chat and messaging endpoints for real-time communication"
-    },
-    {
+      "funIden": "bookingRouter",
       "name": "Booking",
       "item": [
         {
-          "name": "Get Adjust Price",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/booking/adjust-price/:therapistCode",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "booking",
-                "adjust-price",
-                ":therapistCode"
-              ],
-              "variable": [
-                {
-                  "key": "therapistCode",
-                  "value": "THR-001"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Reschedule",
-          "request": {
-            "method": "PUT",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"dateTime\": \"2026-05-22T03:31:04+07:00\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/booking/reschedule/:bookingCode",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "booking",
-                "reschedule",
-                ":bookingCode"
-              ],
-              "variable": [
-                {
-                  "key": "bookingCode",
-                  "value": ""
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
+          "funIden": "bookingRouter.CreateBooking",
           "name": "Create Booking",
           "request": {
+            "funIden": "",
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"city_id\": 1,\r\n  \"dateTime\": \"2026-05-15 10:00:00\",\r\n  \"therapistCode\": \"THR-001\",\r\n  \"payment_method\": \"cash\"\r\n}\r\n",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n  \"city_id\": 1,\n  \"dateTime\": \"2024-01-15 10:00:00\",\n  \"payment_method\": \"bank_transfer\",\n  \"therapistCode\": \"THR-ABC123\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/booking/create",
@@ -465,21 +40,282 @@
                 "create"
               ]
             }
-          },
-          "response": []
+          }
+        },
+        {
+          "funIden": "bookingRouter.GetAdjustPrice",
+          "name": "Get Adjust Price",
+          "request": {
+            "funIden": "",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/booking/adjust-price/:therapistCode",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "booking",
+                "adjust-price",
+                ":therapistCode"
+              ]
+            }
+          }
+        },
+        {
+          "funIden": "bookingRouter.RescheduleBooking",
+          "name": "Reschedule Booking",
+          "request": {
+            "funIden": "",
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"\",\n  \"dateTime\": \"2024-01-15 14:00:00\",\n  \"note\": \"Rescheduled due to conflict\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/booking/reschedule/:code",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "booking",
+                "reschedule",
+                ":code"
+              ]
+            }
+          }
         }
       ]
     },
     {
+      "funIden": "restRouter",
+      "name": "Chat",
+      "item": [
+        {
+          "funIden": "restRouter.GetChatRoom",
+          "name": "Get Chat Room",
+          "request": {
+            "funIden": "",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chat/room",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chat",
+                "room"
+              ]
+            }
+          }
+        },
+        {
+          "funIden": "restRouter.GetCached",
+          "name": "Get Cached",
+          "request": {
+            "funIden": "",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chat/history",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chat",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "actorId",
+                  "value": ""
+                },
+                {
+                  "key": "filter",
+                  "value": "\u003cnil\u003e"
+                },
+                {
+                  "key": "roomId",
+                  "value": "room_abc123"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "funIden": "employeeGroup",
+      "name": "Employee",
+      "item": [
+        {
+          "funIden": "employeeGroup.GetOnboardingList",
+          "name": "Get Onboarding List",
+          "request": {
+            "funIden": "",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/onboarding",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "onboarding"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "john"
+                },
+                {
+                  "key": "latestStatus",
+                  "value": "PENDING"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "funIden": "employeeGroup.GetOnboardingDetail",
+          "name": "Get Onboarding Detail",
+          "request": {
+            "funIden": "",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/onboarding/:code",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "onboarding",
+                ":code"
+              ]
+            }
+          }
+        },
+        {
+          "funIden": "employeeGroup.DeleteOnboarding",
+          "name": "Delete Onboarding",
+          "request": {
+            "funIden": "",
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/onboarding/:code",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "onboarding",
+                ":code"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "funIden": "healthRoutes",
+      "name": "Health",
+      "item": [
+        {
+          "funIden": "healthRoutes.HealthCheck",
+          "name": "Health Check",
+          "request": {
+            "funIden": "",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/health/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health",
+                "status"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "funIden": "historyRoutes",
       "name": "History",
       "item": [
         {
-          "name": "Get History",
+          "funIden": "historyRoutes.GetBookingHistory",
+          "name": "Get Booking History",
           "request": {
+            "funIden": "",
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "url": {
-              "raw": "{{base_url}}/history/list?page=1&size=10&search&status",
+              "raw": "{{base_url}}/history/list",
               "host": [
                 "{{base_url}}"
               ],
@@ -489,71 +325,283 @@
               ],
               "query": [
                 {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "size",
+                  "key": "perPage",
                   "value": "10"
                 },
                 {
                   "key": "search",
-                  "value": null
+                  "value": "BOOK-ABC"
                 },
                 {
                   "key": "status",
-                  "value": null
+                  "value": "upcoming"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
                 }
               ]
             }
-          },
-          "response": []
+          }
+        }
+      ]
+    },
+    {
+      "funIden": "homepageRoutes",
+      "name": "Homepage",
+      "item": [
+        {
+          "funIden": "homepageRoutes.GetSummaryHome",
+          "name": "Get Summary Home",
+          "request": {
+            "funIden": "",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/homepage/summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "homepage",
+                "summary"
+              ]
+            }
+          }
+        },
+        {
+          "funIden": "homepageRoutes.GetCityDropdown",
+          "name": "Get City Dropdown",
+          "request": {
+            "funIden": "",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/homepage/cities-dropdown",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "homepage",
+                "cities-dropdown"
+              ]
+            }
+          }
+        },
+        {
+          "funIden": "homepageRoutes.GetTherapistDropdown",
+          "name": "Get Therapist Dropdown",
+          "request": {
+            "funIden": "",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/homepage/therapist-dropdown/:cityId",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "homepage",
+                "therapist-dropdown",
+                ":cityId"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "funIden": "serviceGroup",
+      "name": "Service",
+      "item": [
+        {
+          "funIden": "serviceGroup.GetCategories",
+          "name": "Get Categories",
+          "request": {
+            "funIden": "",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/service/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "service",
+                "categories"
+              ]
+            }
+          }
+        },
+        {
+          "funIden": "serviceGroup.GetServiceDetail",
+          "name": "Get Service Detail",
+          "request": {
+            "funIden": "",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/service/:serviceId",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "service",
+                ":serviceId"
+              ]
+            }
+          }
+        },
+        {
+          "funIden": "serviceGroup.UpdateService",
+          "name": "Update Service",
+          "request": {
+            "funIden": "",
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": 1,\n  \"cityIds\": [\n    1,\n    2\n  ],\n  \"commission\": 10,\n  \"description\": \"Relaxing full body massage\",\n  \"duration\": 60,\n  \"iD\": 0,\n  \"includedItems\": [\n    \"Towel\",\n    \"Oil\"\n  ],\n  \"name\": \"Massage Therapy\",\n  \"price\": 150000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/service/:serviceId",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "service",
+                ":serviceId"
+              ]
+            }
+          }
+        },
+        {
+          "funIden": "serviceGroup.DeleteService",
+          "name": "Delete Service",
+          "request": {
+            "funIden": "",
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/service/:serviceId",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "service",
+                ":serviceId"
+              ]
+            }
+          }
+        },
+        {
+          "funIden": "serviceGroup.CreateService",
+          "name": "Create Service",
+          "request": {
+            "funIden": "",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": 1,\n  \"cityIds\": [\n    1,\n    2\n  ],\n  \"commission\": 10,\n  \"description\": \"Relaxing full body massage\",\n  \"duration\": 60,\n  \"includedItems\": [\n    \"Towel\",\n    \"Oil\"\n  ],\n  \"name\": \"Massage Therapy\",\n  \"price\": 150000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/service",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "service"
+              ]
+            }
+          }
+        },
+        {
+          "funIden": "serviceGroup.GetServiceList",
+          "name": "Get Service List",
+          "request": {
+            "funIden": "",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/service",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "service"
+              ]
+            }
+          }
         }
       ]
     }
   ],
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{token}}",
-        "type": "string"
-      }
-    ]
-  },
-  "event": [
-    {
-      "listen": "prerequest",
-      "script": {
-        "type": "text/javascript",
-        "packages": {},
-        "requests": {},
-        "exec": [
-          ""
-        ]
-      }
-    },
-    {
-      "listen": "test",
-      "script": {
-        "type": "text/javascript",
-        "packages": {},
-        "requests": {},
-        "exec": [
-          ""
-        ]
-      }
-    }
-  ],
   "variable": [
     {
+      "id": "",
       "key": "base_url",
-      "value": "http://localhost:8999/api/v1"
+      "value": "http://localhost:8999/api/v1",
+      "type": ""
     },
     {
+      "id": "",
       "key": "token",
-      "value": ""
+      "value": "",
+      "type": ""
     }
   ]
 }
