@@ -333,7 +333,7 @@ func (u Usecase) GetOnboardingList(ctx context.Context, query OnboardingListQuer
 func (u Usecase) GetOnboardingDetail(ctx context.Context, code string) (response OnboardingDetailResponse, err error) {
 	approval, err := u.onboardingApprovalRepo.FindOneByExpressionAndJoin(
 		ctx,
-		db.Query(db.Equal(code, "code")),
+		db.Query(db.Equal(code, "onboarding_approvals.code")),
 		[]string{"Therapist", "ApprovalBy"},
 		nil,
 	)
