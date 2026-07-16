@@ -12,7 +12,7 @@ type RegisterTherapistRequest struct {
 	Email    string `json:"email"    binding:"required" example:"sarah@example.com"`
 	Password string `json:"password" binding:"required" example:"SecurePass123!"`
 	Phone    string `json:"phone"    binding:"required" example:"081234567890"`
-	Profile  string `json:"profile"  binding:"required" example:"data:image/png;base64,..."`
+	Profile  string `json:"profile" example:"data:image/png;base64,..."`
 }
 
 type RegisterTherapistResponse struct {
