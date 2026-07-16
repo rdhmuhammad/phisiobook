@@ -1,12 +1,14 @@
 package domain
 
+import "database/sql"
+
 type Therapist struct {
 	BaseEntity
 	Code           string            `json:"code"`
 	Profile        string            `json:"profile"`
 	Name           string            `json:"name"`
 	IsVerified     int32             `json:"is_verified"`
-	CityId         string            `json:"city_id"`
+	CityId         sql.Null[uint64]  `json:"city_id"`
 	ExperienceYear int               `json:"experience_year"`
 	Rating         float64           `json:"rating"`
 	Price          int               `json:"price"`

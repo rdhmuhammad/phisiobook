@@ -1,4 +1,4 @@
-﻿package therapist
+package therapist
 
 import (
 	"bytes"
@@ -137,7 +137,7 @@ func (u Usecase) Register(ctx context.Context, request RegisterTherapistRequest)
 		Profile:        profileFileName,
 		Name:           request.FullName,
 		IsVerified:     0,
-		CityId:         "",
+		CityId:         db.NullBigint(0),
 		ExperienceYear: 0,
 		Price:          0,
 		AuthID:         userAdmin.ID,

@@ -314,7 +314,7 @@ CREATE TABLE IF NOT EXISTS `therapist_documents` (
 ALTER TABLE `therapist_documents` ADD COLUMN `ijazah_doc` TEXT NULL AFTER `sip_doc`;
 
 CREATE TABLE IF NOT EXISTS `onboarding_approvals`
-ALTER TABLE `onboarding_approvals` ADD COLUMN `code` VARCHAR(100) NULL AFTER `id`; (
+(
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `therapist_id` BIGINT UNSIGNED NOT NULL,
   `latest_status` VARCHAR(50) NOT NULL DEFAULT 'PENDING',
@@ -328,6 +328,8 @@ ALTER TABLE `onboarding_approvals` ADD COLUMN `code` VARCHAR(100) NULL AFTER `id
   UNIQUE KEY `uk_onboarding_approvals_therapist_id` (`therapist_id`),
   CONSTRAINT `fk_onboarding_approvals_therapist_id` FOREIGN KEY (`therapist_id`) REFERENCES `therapists` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE `onboarding_approvals` ADD COLUMN `code` VARCHAR(100) NULL AFTER `id`;
 
 CREATE TABLE IF NOT EXISTS `onboarding_approval_hist` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
