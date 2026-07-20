@@ -1,10 +1,11 @@
-﻿//go:generate apigen
+//go:generate apigen
 
 package controller
 
 import (
 	"context"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/rdhmuhammad/phisiobook/internal/constant"
@@ -35,9 +36,24 @@ func NewTherapistController(dbConn *gorm.DB, port base.Port, controller base.Bas
 
 func (ctrl TherapistController) Register(c *gin.Context) {
 	var request therapist.RegisterTherapistRequest
-	if errs := ctrl.Enigma.BindAndValidate(c, &request); len(errs) > 0 {
-		c.JSON(http.StatusBadRequest, dto.DefaultInvalidInputFormResponse(errs))
+	if err := c.ShouldBind(&request); err != nil {
+		c.JSON(http.StatusBadRequest, dto.DefaultErrorResponseWithMessage("Invalid input", err))
 		return
+	}
+
+	profileHeader, err := c.FormFile("profile")
+	if err == nil {
+		profileFile, ferr := profileHeader.Open()
+		if ferr != nil {
+			ctrl.Mapper.ErrorResponse(c, ferr)
+			return
+		}
+		defer profileFile.Close()
+		request.Profile = therapist.FileInfo{
+			Reader:    profileFile,
+			Size:      profileHeader.Size,
+			Extension: filepath.Ext(profileHeader.Filename),
+		}
 	}
 
 	result, err := ctrl.uc.Register(c.Request.Context(), request)
@@ -94,10 +110,10 @@ func (ctrl TherapistController) Onboarding(c *gin.Context) {
 	defer ijazahFile.Close()
 
 	request := therapist.OnboardingRequest{
-		KtpFile:    therapist.FileInfo{Reader: ktpFile, Size: ktpHeader.Size},
-		SipFile:    therapist.FileInfo{Reader: sipFile, Size: sipHeader.Size},
-		StrFile:    therapist.FileInfo{Reader: strFile, Size: strHeader.Size},
-		IjazahFile: therapist.FileInfo{Reader: ijazahFile, Size: ijazahHeader.Size},
+		KtpFile:    therapist.FileInfo{Reader: ktpFile, Size: ktpHeader.Size, Extension: filepath.Ext(ktpHeader.Filename)},
+		SipFile:    therapist.FileInfo{Reader: sipFile, Size: sipHeader.Size, Extension: filepath.Ext(sipHeader.Filename)},
+		StrFile:    therapist.FileInfo{Reader: strFile, Size: strHeader.Size, Extension: filepath.Ext(strHeader.Filename)},
+		IjazahFile: therapist.FileInfo{Reader: ijazahFile, Size: ijazahHeader.Size, Extension: filepath.Ext(ijazahHeader.Filename)},
 		BankCode:   c.PostForm("bankCode"),
 		AccName:    c.PostForm("accName"),
 		AccNumber:  c.PostForm("accNumber"),
@@ -125,4 +141,3 @@ func (ctrl TherapistController) Route(router *gin.RouterGroup) {
 		ctrl.Onboarding,
 	)
 }
-

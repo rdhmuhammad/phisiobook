@@ -7,6 +7,7 @@ import (
 	"github.com/rdhmuhammad/phisiobook/pkg/db"
 	"github.com/rdhmuhammad/phisiobook/pkg/logger"
 	"github.com/rdhmuhammad/phisiobook/pkg/middleware"
+	"github.com/rdhmuhammad/phisiobook/pkg/migrator"
 	"github.com/rdhmuhammad/phisiobook/pkg/miniostorage"
 	"github.com/rdhmuhammad/phisiobook/pkg/mongodb"
 	"os"
@@ -49,10 +50,15 @@ func Default() *Api {
 
 	socket := cio.New(server)
 
-	dboConn, err := db.Default()
+	dbConn, err := db.Default()
 	if err != nil {
 		panic(fmt.Sprintf("panic at db connection: %s", err.Error()))
 	}
+
+	if err := migrator.Up(dbConn); err != nil {
+		panic(fmt.Sprintf("panic at migration: %s", err.Error()))
+	}
+
 	//
 	dbCache := cache.Default()
 	//
@@ -77,7 +83,7 @@ func Default() *Api {
 		mongoConn: mongoConn,
 		server:    server,
 		socket:    socket,
-		db:        dboConn,
+		db:        dbConn,
 		cache:     dbCache,
 		minioStr:  minioConn,
 		reZero:    &reZero,

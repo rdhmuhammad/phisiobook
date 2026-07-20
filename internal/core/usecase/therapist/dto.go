@@ -8,11 +8,11 @@ import (
 )
 
 type RegisterTherapistRequest struct {
-	FullName string `json:"fullName" binding:"required" example:"Dr. Sarah Johnson"`
-	Email    string `json:"email"    binding:"required" example:"sarah@example.com"`
-	Password string `json:"password" binding:"required" example:"SecurePass123!"`
-	Phone    string `json:"phone"    binding:"required" example:"081234567890"`
-	Profile  string `json:"profile" example:"data:image/png;base64,..."`
+	FullName string `form:"fullName" binding:"required" example:"Dr. Sarah Johnson"`
+	Email    string `form:"email"    binding:"required" example:"sarah@example.com"`
+	Password string `form:"password" binding:"required" example:"SecurePass123!"`
+	Phone    string `form:"phone"    binding:"required" example:"081234567890"`
+	Profile  FileInfo
 }
 
 type RegisterTherapistResponse struct {
@@ -21,8 +21,9 @@ type RegisterTherapistResponse struct {
 }
 
 type FileInfo struct {
-	Reader io.Reader
-	Size   int64
+	Reader    io.Reader
+	Size      int64
+	Extension string
 }
 
 type OnboardingRequest struct {

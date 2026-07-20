@@ -1,12 +1,9 @@
 package therapist
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 	"time"
 
@@ -66,14 +63,12 @@ func (u Usecase) Register(ctx context.Context, request RegisterTherapistRequest)
 		return response, u.ErrHandler.ErrorReturn(err)
 	}
 
-	decoded, size, err := decodeBase64(request.Profile)
-	if err != nil {
-		return response, u.ErrHandler.ErrorReturn(err)
-	}
-	profileFileName := fmt.Sprintf("therapist/profile_%d", time.Now().UnixMilli())
-	_, err = u.Storage.StoreFile(ctx, profileFileName, decoded, size)
-	if err != nil {
-		return response, u.ErrHandler.ErrorReturn(err)
+	profileFileName := fmt.Sprintf("therapist/profile_%d%s", time.Now().UnixMilli(), request.Profile.Extension)
+	if request.Profile.Reader != nil {
+		_, err = u.Storage.StoreFile(ctx, profileFileName, request.Profile.Reader, request.Profile.Size)
+		if err != nil {
+			return response, u.ErrHandler.ErrorReturn(err)
+		}
 	}
 
 	userAdminCode, err := u.Davinci.GenerateUniqueKeyWithPredicate(
@@ -193,25 +188,25 @@ func (u Usecase) Onboarding(ctx context.Context, request OnboardingRequest) (res
 		return response, u.ErrHandler.ErrorReturn(err)
 	}
 
-	ktpFileName := fmt.Sprintf("therapist/ktp_%d_%d", therapist.ID, time.Now().UnixMilli())
+	ktpFileName := fmt.Sprintf("therapist/ktp_%d_%d%s", therapist.ID, time.Now().UnixMilli(), request.KtpFile.Extension)
 	_, err = u.Storage.StoreFile(ctx, ktpFileName, request.KtpFile.Reader, request.KtpFile.Size)
 	if err != nil {
 		return response, u.ErrHandler.ErrorReturn(err)
 	}
 
-	sipFileName := fmt.Sprintf("therapist/sip_%d_%d", therapist.ID, time.Now().UnixMilli())
+	sipFileName := fmt.Sprintf("therapist/sip_%d_%d%s", therapist.ID, time.Now().UnixMilli(), request.SipFile.Extension)
 	_, err = u.Storage.StoreFile(ctx, sipFileName, request.SipFile.Reader, request.SipFile.Size)
 	if err != nil {
 		return response, u.ErrHandler.ErrorReturn(err)
 	}
 
-	strFileName := fmt.Sprintf("therapist/str_%d_%d", therapist.ID, time.Now().UnixMilli())
+	strFileName := fmt.Sprintf("therapist/str_%d_%d%s", therapist.ID, time.Now().UnixMilli(), request.StrFile.Extension)
 	_, err = u.Storage.StoreFile(ctx, strFileName, request.StrFile.Reader, request.StrFile.Size)
 	if err != nil {
 		return response, u.ErrHandler.ErrorReturn(err)
 	}
 
-	ijazahFileName := fmt.Sprintf("therapist/ijazah_%d_%d", therapist.ID, time.Now().UnixMilli())
+	ijazahFileName := fmt.Sprintf("therapist/ijazah_%d_%d%s", therapist.ID, time.Now().UnixMilli(), request.IjazahFile.Extension)
 	_, err = u.Storage.StoreFile(ctx, ijazahFileName, request.IjazahFile.Reader, request.IjazahFile.Size)
 	if err != nil {
 		return response, u.ErrHandler.ErrorReturn(err)
@@ -425,16 +420,4 @@ func (u Usecase) DeleteOnboarding(ctx context.Context, code string) (err error) 
 	}
 
 	return nil
-}
-
-func decodeBase64(base64Str string) (io.Reader, int64, error) {
-	data := base64Str
-	if idx := strings.Index(data, ";base64,"); idx != -1 {
-		data = data[idx+8:]
-	}
-	byts, err := base64.StdEncoding.DecodeString(data)
-	if err != nil {
-		return nil, 0, err
-	}
-	return bytes.NewReader(byts), int64(len(byts)), nil
 }
